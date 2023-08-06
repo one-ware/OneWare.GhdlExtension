@@ -18,6 +18,8 @@ public class GhdlService
 
     public AsyncRelayCommand SimulateCommand { get; }
     
+    public AsyncRelayCommand SynthCommand { get; }
+    
     public GhdlService(ILogger logger, IActive active, IDockService dockService, IProjectExplorerService projectExplorerService)
     {
         _logger = logger;
@@ -26,6 +28,9 @@ public class GhdlService
         _projectExplorerService = projectExplorerService;
         
         SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync, 
+            () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
+        
+        SynthCommand = new AsyncRelayCommand(SynthCurrentFileAsync, 
             () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
 
         _dockService.WhenValueChanged(x => x.CurrentDocument).Subscribe(x =>
@@ -38,7 +43,7 @@ public class GhdlService
     {
         return new ProcessStartInfo
         {
-            FileName = "/Users/hendrikmennen/VHDPlus/Packages/ghdl/bin/ghdl", //@"C:\Users\Hendrik\VHDPlus\Packages\ghdl\GHDL\bin\ghdl.exe",
+            FileName = "/home/hendrik/VHDPlus/Packages/ghdl/bin/ghdl", //"/Users/hendrikmennen/VHDPlus/Packages/ghdl/bin/ghdl", //@"C:\Users\Hendrik\VHDPlus\Packages\ghdl\GHDL\bin\ghdl.exe",
             Arguments = $"{arguments}",
             CreateNoWindow = true,
             WorkingDirectory = workingDirectory,
@@ -48,15 +53,18 @@ public class GhdlService
         };
     }
     
-    private async Task<bool> ExecuteGhdlShellAsync(string workingDirectory, string arguments, string status = "Running GHDL", AppState state = AppState.Loading)
+    private async Task<(bool success, string output)> ExecuteGhdlShellAsync(string workingDirectory, string arguments, string status = "Running GHDL", AppState state = AppState.Loading)
     {
         var success = true;
         
         _logger.Log($"ghdl {arguments}", ConsoleColor.DarkCyan, true, Brushes.CornflowerBlue);
 
+        var output = string.Empty;
+        
         var startInfo = GetGhdlProcessStartInfo(workingDirectory, arguments);
 
-        using var activeProcess = new Process { StartInfo = startInfo };
+        using var activeProcess = new Process();
+        activeProcess.StartInfo = startInfo;
         var key = _active.AddState(status, state, activeProcess);
 
         activeProcess.OutputDataReceived += (o, i) =>
@@ -75,6 +83,7 @@ public class GhdlService
             {
                 _logger.Log(i.Data);
             }
+            output += i.Data;
         };
         activeProcess.ErrorDataReceived += (o, i) =>
         {
@@ -111,7 +120,45 @@ public class GhdlService
         if (key.Terminated) success = false;
         _active.RemoveState(key);
 
-        return success;
+        return (success,output);
+    }
+
+    private Task SynthCurrentFileAsync()
+    {
+        if (_dockService.CurrentDocument?.CurrentFile is IProjectFile selectedFile)
+            return SynthAsync(selectedFile);
+        return Task.CompletedTask;
+    }
+
+    
+    public async Task SynthAsync(IProjectFile file)
+    {
+        _dockService.Show<IOutputService>();
+
+        var vhdlFiles = string.Join(' ',
+            file.Root.Files.Where(x => x.Extension is ".vhd" or ".vhdl")
+                .Select(x => "\"" + x.FullPath + "\""));
+
+        var top = Path.GetFileNameWithoutExtension(file.FullPath);
+        var vcdPath = $"{top}.vcd";
+        var waveFormFileArgument = $"--vcd={vcdPath}";
+        var ghdlOptions = "--std=02";
+        var simulatingOptions = "--ieee-asserts=disable";
+        var folder = file.TopFolder!.FullPath;
+
+        var initFiles = await ExecuteGhdlShellAsync(folder, $"-i {ghdlOptions} {vhdlFiles}",
+            "GHDL Initializing generated files");
+        if (!initFiles.success) return;
+        var make = await ExecuteGhdlShellAsync(folder, $"-m {ghdlOptions} {top}", "Running GHDL Make");
+        if (!make.success) return;
+        var elaboration = await ExecuteGhdlShellAsync(folder, $"-e {ghdlOptions} {top}",
+            "Running GHDL Elaboration");
+        if (!elaboration.success) return;
+        var synth = await ExecuteGhdlShellAsync(folder, $"--synth {ghdlOptions} --out=dot {top}",
+            "Running GHDL Synth");
+        if (!synth.success) return;
+        
+        await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(file.FullPath) ?? "", Path.GetFileName(file.FullPath)+ ".dot"), synth.output);
     }
 
     private Task SimulateCurrentFileAsync()
@@ -138,10 +185,12 @@ public class GhdlService
         
         var initFiles = await ExecuteGhdlShellAsync(folder, $"-i {ghdlOptions} {vhdlFiles}",
             "GHDL Initializing generated files");
-        var make = initFiles &&
-                   await ExecuteGhdlShellAsync(folder, $"-m {ghdlOptions} {top}", "Running GHDL Make");
-        var elaboration = make && await ExecuteGhdlShellAsync(folder, $"-e {ghdlOptions} {top}",
+        if (!initFiles.success) return;
+        var make = await ExecuteGhdlShellAsync(folder, $"-m {ghdlOptions} {top}", "Running GHDL Make");
+        if (!make.success) return;
+        var elaboration = await ExecuteGhdlShellAsync(folder, $"-e {ghdlOptions} {top}",
             "Running GHDL Elaboration");
+        if (!elaboration.success) return;
                     
         var openFile = file.TopFolder.Search($"{top}.vcd") as IProjectFile;
         openFile ??= file.TopFolder.AddFile(vcdPath, true);
@@ -152,7 +201,7 @@ public class GhdlService
          //   vcd.PrepareLiveStream();
         //}
         
-        var run = elaboration && await ExecuteGhdlShellAsync(folder,
+        var run = await ExecuteGhdlShellAsync(folder,
             $"-r {ghdlOptions} {top} {waveFormFileArgument} {simulatingOptions}",
             "Running GHDL Simulation");
     }
