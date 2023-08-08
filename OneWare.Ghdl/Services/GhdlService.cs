@@ -44,9 +44,16 @@ public class GhdlService
     private static ProcessStartInfo GetGhdlProcessStartInfo(string workingDirectory, string arguments)
     {
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+
+        var start = PlatformHelper.Platform switch
+        {
+            PlatformId.WinX64 => $"C:{assemblyPath}/tools/ghdl/GHDL/bin/ghdl.exe",
+            _ => $"C:{assemblyPath}/tools/ghdl/bin/ghdl",
+        };
+        
         return new ProcessStartInfo
         {
-            FileName = Path.Combine(assemblyPath, "tools", "GHDL", "bin", $"ghdl{PlatformHelper.ExecutableExtension}"),
+            FileName = start,
             Arguments = $"{arguments}",
             CreateNoWindow = true,
             WorkingDirectory = workingDirectory,
