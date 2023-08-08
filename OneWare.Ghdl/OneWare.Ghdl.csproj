@@ -1,4 +1,4 @@
-<Project InitialTargets="DownloadExternalPackage" Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
@@ -12,31 +12,26 @@
       <PackageReference Include="OneWare.Shared" Version="0.12.0.2" Private="false" ExcludeAssets="runtime"/>
     </ItemGroup>
 
-    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' OR ('$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Windows')))">
         <ExternalPackageUrl>https://github.com/ghdl/ghdl/releases/download/v3.0.0/ghdl-MINGW32.zip</ExternalPackageUrl>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR ('$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Linux')))">
         <ExternalPackageUrl>https://github.com/ghdl/ghdl/releases/download/v3.0.0/ghdl-gha-ubuntu-20.04-mcode.tgz</ExternalPackageUrl>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64' OR ('$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('OSX')))">
         <ExternalPackageUrl>https://github.com/ghdl/ghdl/releases/download/v3.0.0/ghdl-macos-11-mcode.tgz</ExternalPackageUrl>
     </PropertyGroup>
 
-    <ItemGroup>
-        <Content Include="$(IntermediateOutputPath)External_Package/**"
-                 Link="%(RecursiveDir)%(Filename)%(Extension)"
-                 CopyToOutputDirectory="PreserveNewest"/>
-    </ItemGroup>
-
-    <Target Name="DownloadExternalPackage" Condition="'$(LanguageServerUrl)' != ''">
+    <Target Name="DownloadExternalPackage" AfterTargets="Build" Condition="'$(ExternalPackageUrl)' != '' AND !Exists('$(OutputPath)tools')">
         <DownloadFile
                 SourceUrl="$(ExternalPackageUrl)"
                 DestinationFileName="temp_package.zip"
                 DestinationFolder="$(IntermediateOutputPath)" />
-        <Unzip DestinationFolder="$(IntermediateOutputPath)External_Package"
-               SourceFiles="$(IntermediateOutputPath)/temp_package.zip"/>
+        <Unzip DestinationFolder="$(OutputPath)tools"
+               SourceFiles="$(IntermediateOutputPath)temp_package.zip"/>
+        <Message Text="Downloaded Package from $(ExternalPackageUrl)" Importance="high" />
     </Target>
     
 </Project>

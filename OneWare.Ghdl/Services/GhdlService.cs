@@ -46,7 +46,7 @@ public class GhdlService
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
         return new ProcessStartInfo
         {
-            FileName = Path.Combine(assemblyPath, "GHDL", "bin", $"ghdl{PlatformHelper.ExecutableExtension}"),
+            FileName = Path.Combine(assemblyPath, "tools", "GHDL", "bin", $"ghdl{PlatformHelper.ExecutableExtension}"),
             Arguments = $"{arguments}",
             CreateNoWindow = true,
             WorkingDirectory = workingDirectory,
@@ -146,7 +146,6 @@ public class GhdlService
         var vcdPath = $"{top}.vcd";
         var waveFormFileArgument = $"--vcd={vcdPath}";
         var ghdlOptions = "--std=02";
-        var simulatingOptions = "--ieee-asserts=disable";
         var folder = file.TopFolder!.FullPath;
 
         var initFiles = await ExecuteGhdlShellAsync(folder, $"-i {ghdlOptions} {vhdlFiles}",
