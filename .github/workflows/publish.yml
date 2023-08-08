@@ -26,7 +26,7 @@ jobs:
       run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r linux-x64 -o publish-linux-x64
     - uses: actions/upload-artifact@v3
       with:
-        name: zip
+        name: OneWare_GhdlExtension_linux-x64
         if-no-files-found: error
         retention-days: 7
         path: ./publish-linux-x64
