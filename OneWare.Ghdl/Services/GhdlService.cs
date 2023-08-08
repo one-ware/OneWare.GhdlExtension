@@ -1,11 +1,13 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
 using OneWare.Shared.Enums;
+using OneWare.Shared.Helpers;
 using OneWare.Shared.Models;
 using OneWare.Shared.Services;
-//using OneWare.Vcd.Viewer.ViewModels;
+using OneWare.Shared.ViewModels;
 
 namespace OneWare.Ghdl.Services;
 
@@ -41,9 +43,10 @@ public class GhdlService
     
     private static ProcessStartInfo GetGhdlProcessStartInfo(string workingDirectory, string arguments)
     {
+        var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
         return new ProcessStartInfo
         {
-            FileName = "/home/hendrik/VHDPlus/Packages/ghdl/bin/ghdl", //"/Users/hendrikmennen/VHDPlus/Packages/ghdl/bin/ghdl", //@"C:\Users\Hendrik\VHDPlus\Packages\ghdl\GHDL\bin\ghdl.exe",
+            FileName = Path.Combine(assemblyPath, "GHDL", "bin", $"ghdl{PlatformHelper.ExecutableExtension}"),
             Arguments = $"{arguments}",
             CreateNoWindow = true,
             WorkingDirectory = workingDirectory,
@@ -196,10 +199,10 @@ public class GhdlService
         openFile ??= file.TopFolder.AddFile(vcdPath, true);
         
         var doc = await _dockService.OpenFileAsync(openFile);
-        //if (doc is VcdViewModel vcd)
-        //{
-         //   vcd.PrepareLiveStream();
-        //}
+        if (doc is IStreamableDocument vcd)
+        {   
+            vcd.PrepareLiveStream();
+        }
         
         var run = await ExecuteGhdlShellAsync(folder,
             $"-r {ghdlOptions} {top} {waveFormFileArgument} {simulatingOptions}",
