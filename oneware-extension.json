@@ -3,10 +3,18 @@
   "name": "GHDL Extension",
   "id": "GhdlModule",
   "description": "GHDL Integration for OneWare",
-  "readmeUrl": "https://raw.githubusercontent.com/ProtopSolutions/OneWare.GhdlExtension/master/README.md",
   "license": "MIT",
-  "licenseUrl": "https://raw.githubusercontent.com/HendrikMennen/AvaloniaEdit/master/LICENSE",
   "iconUrl": "https://ghdl.github.io/ghdl/_static/logo.png",
+  "tabs": [
+    {
+      "title": "Readme",
+      "contentUrl": "https://raw.githubusercontent.com/ProtopSolutions/OneWare.GhdlExtension/master/Extension.md"
+    },
+    {
+      "title": "License",
+      "contentUrl": "https://raw.githubusercontent.com/ProtopSolutions/OneWare.GhdlExtension/master/License.md"
+    }
+  ],
   "links": [
     {
       "name": "GHDL Github",
@@ -37,5 +45,3 @@
         }
       ]
     }
-  ]
-}
