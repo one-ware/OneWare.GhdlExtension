@@ -22,16 +22,11 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x 
-    - name: get-net-sdk-project-versions-action
-      uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
-      id: get-version
-      with:
-        proj-path: OneWare.Ghdl/OneWare.Ghdl.csproj
     - name: Build Windows-x64
       run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r win-x64 -o publish-win-x64
     - uses: actions/upload-artifact@v3
       with:
-        name: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64
+        name: OneWare_GhdlExtension_win-x64
         if-no-files-found: error
         retention-days: 7
         path: ./publish-win-x64
@@ -39,7 +34,7 @@ jobs:
       run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r linux-x64 -o publish-linux-x64
     - uses: actions/upload-artifact@v3
       with:
-        name: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_linux-x64
+        name: OneWare_GhdlExtension_linux-x64
         if-no-files-found: error
         retention-days: 7
         path: ./publish-linux-x64
@@ -47,7 +42,7 @@ jobs:
       run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r osx-x64 -o publish-osx-x64
     - uses: actions/upload-artifact@v3
       with:
-        name: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_osx-x64
+        name: OneWare_GhdlExtension_osx-x64
         if-no-files-found: error
         retention-days: 7
         path: ./publish-osx-x64
@@ -67,7 +62,15 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: ./release
+      - name: Archive Release
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          type: 'zip'
+          filename: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64.zip
+          path: ./release/OneWare_GhdlExtension_win-x64
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "release/*.zip"
           tag: ${{steps.get-version.outputs.version}}
+          allowUpdates: true
+          
