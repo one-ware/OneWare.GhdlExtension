@@ -31,7 +31,7 @@
 
     <PropertyGroup>
         <PackageName>ghdl</PackageName>
-        <ExtractionFolder>native_tools/$(PackageName)/$(UsePackageTarget)</ExtractionFolder>
+        <ExtractionFolder>native_tools/$(UsePackageTarget)/$(PackageName)</ExtractionFolder>
     </PropertyGroup>
 
     <ItemGroup>

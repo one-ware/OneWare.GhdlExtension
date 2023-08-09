@@ -48,10 +48,10 @@ public class GhdlService
 
         var start = PlatformHelper.Platform switch
         {
-            PlatformId.WinX64 => $"{assemblyPath}/native_tools/ghdl/win-x64/GHDL/bin/ghdl.exe",
-            PlatformId.LinuxX64 => $"{assemblyPath}/native_tools/ghdl/linux-x64/GHDL/bin/ghdl",
-            PlatformId.OsxX64 => $"{assemblyPath}/native_tools/ghdl/osx-x64/GHDL/bin/ghdl",
-            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/ghdl/osx-x64/GHDL/bin/ghdl",
+            PlatformId.WinX64 => $"{assemblyPath}/native_tools/win-x64/ghdl/GHDL/bin/ghdl.exe",
+            PlatformId.LinuxX64 => $"{assemblyPath}/native_tools/linux-x64/ghdl/GHDL/bin/ghdl",
+            PlatformId.OsxX64 => $"{assemblyPath}/native_tools/osx-x64/ghdl/GHDL/bin/ghdl",
+            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/osx-x64/ghdl/GHDL/bin/ghdl",
             _ => null,
         };
 
