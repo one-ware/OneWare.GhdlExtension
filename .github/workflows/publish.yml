@@ -61,13 +61,13 @@ jobs:
           proj-path: OneWare.Ghdl/OneWare.Ghdl.csproj
       - uses: actions/download-artifact@v3
         with:
-          path: ./release
+          path: ./artifacts
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
-          filename: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64.zip
-          path: ./release/OneWare_GhdlExtension_win-x64
+          filename: release/OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64.zip
+          path: ./artifacts/OneWare_GhdlExtension_win-x64
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "release/*.zip"
