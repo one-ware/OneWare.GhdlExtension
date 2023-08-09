@@ -66,11 +66,11 @@ jobs:
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
-          filename: release/OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64.zip
+          filename: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64.zip
           path: ./artifacts/OneWare_GhdlExtension_win-x64
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "release/*.zip"
+          artifacts: "*.zip"
           tag: ${{steps.get-version.outputs.version}}
           allowUpdates: true
           
