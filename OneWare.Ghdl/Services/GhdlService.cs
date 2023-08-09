@@ -47,7 +47,7 @@ public class GhdlService
 
         var start = PlatformHelper.Platform switch
         {
-            PlatformId.WinX64 => $"{assemblyPath}/tools/ghdl/GHDL/bin/ghdl.exe",
+            PlatformId.WinX64 => $"{assemblyPath}/native_tools/ghdl/win-x64/GHDL/bin/ghdl.exe",
             _ => $"{assemblyPath}/tools/ghdl/bin/ghdl",
         };
         
