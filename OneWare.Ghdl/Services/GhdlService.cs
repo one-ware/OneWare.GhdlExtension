@@ -8,6 +8,7 @@ using OneWare.Shared.Helpers;
 using OneWare.Shared.Models;
 using OneWare.Shared.Services;
 using OneWare.Shared.ViewModels;
+using Prism.Ioc;
 
 namespace OneWare.Ghdl.Services;
 
@@ -48,8 +49,16 @@ public class GhdlService
         var start = PlatformHelper.Platform switch
         {
             PlatformId.WinX64 => $"{assemblyPath}/native_tools/ghdl/win-x64/GHDL/bin/ghdl.exe",
-            _ => $"{assemblyPath}/tools/ghdl/bin/ghdl",
+            PlatformId.LinuxX64 => $"{assemblyPath}/native_tools/ghdl/linux-x64/GHDL/bin/ghdl",
+            PlatformId.OsxX64 => $"{assemblyPath}/native_tools/ghdl/osx-x64/GHDL/bin/ghdl",
+            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/ghdl/osx-x64/GHDL/bin/ghdl",
+            _ => null,
         };
+
+        if (start is null)
+        {
+            throw new NotSupportedException("GHDL not supported on this platform");
+        }
         
         return new ProcessStartInfo
         {
