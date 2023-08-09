@@ -62,12 +62,24 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: ./artifacts
-      - name: Archive Release
+      - name: Archive Release Win-x64
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
           filename: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64.zip
           path: ./artifacts/OneWare_GhdlExtension_win-x64
+      - name: Archive Release Linux-x64
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          type: 'zip'
+          filename: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_linux-x64.zip
+          path: ./artifacts/OneWare_GhdlExtension_linux-x64
+      - name: Archive Release Osx-x64
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          type: 'zip'
+          filename: OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_osx-x64.zip
+          path: ./artifacts/OneWare_GhdlExtension_osx-x64
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "*.zip"
