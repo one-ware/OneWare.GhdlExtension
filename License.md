@@ -1,4 +1,8 @@
-**For GHDL License visit [here](https://github.com/ghdl/ghdl/blob/master/doc/licenses.rst)**
+### GHDL License
+
+[GNU GPLv2](https://ghdl.github.io/ghdl/licenses.html)
+
+### Extension License
 
 Copyright (c) 2023-2023 Protop Solutions UG
 
