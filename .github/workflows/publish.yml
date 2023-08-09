@@ -46,3 +46,22 @@ jobs:
         if-no-files-found: error
         retention-days: 7
         path: ./publish-osx-x64
+        
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [ build ]
+    steps:
+      # Download the NuGet package created in the previous job
+      - uses: actions/download-artifact@v3
+        with:
+          name: OneWare_GhdlExtension_linux-x64
+          path: ./release
+      - uses: actions/download-artifact@v3
+        with:
+          name: OneWare_GhdlExtension_win-x64
+          path: ./release
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "release/*.zip"
