@@ -34,5 +34,7 @@ public class GhdlModule : IModule
             {
                 DataContext = ghdlService
             });
+        
+        containerProvider.Resolve<IModuleTracker>().RecordModuleInitialized(GetType().Name);
     }
 }
