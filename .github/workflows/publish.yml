@@ -57,7 +57,7 @@ jobs:
           path: ./artifacts
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/**.zip"
+          artifacts: "artifacts/**/*.zip"
           tag: ${{steps.get-version.outputs.version}}
           allowUpdates: true
           
