@@ -35,10 +35,10 @@ jobs:
         directory: ./publish
     - uses: actions/upload-artifact@v3
       with:
-        name: OneWare_GhdlExtension_${{ matrix.target }}.zip
+        name: OneWare_GhdlExtension_${{ matrix.target }}
         if-no-files-found: error
         retention-days: 7
-        path: ./
+        path: ./OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_${{ matrix.target }}.zip
         
   release:
     runs-on: ubuntu-latest
