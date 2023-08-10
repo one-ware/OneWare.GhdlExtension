@@ -1,0 +1,49 @@
+{
+  "category": "Simulators",
+  "name": "GHDL Extension",
+  "id": "GhdlModule",
+  "description": "GHDL Integration for OneWare",
+  "license": "MIT",
+  "iconUrl": "https://ghdl.github.io/ghdl/_static/logo.png",
+  "tabs": [
+    {
+      "title": "Readme",
+      "contentUrl": "https://raw.githubusercontent.com/ProtopSolutions/OneWare.GhdlExtension/master/Extension.md"
+    },
+    {
+      "title": "License",
+      "contentUrl": "https://raw.githubusercontent.com/ProtopSolutions/OneWare.GhdlExtension/master/License.md"
+    }
+  ],
+  "links": [
+    {
+      "name": "GHDL Github",
+      "url": "https://github.com/ghdl/ghdl"
+    }
+  ],
+  "versions": [
+    {
+      "version": "0.12.0.2",
+      "dependencies": [
+        {
+          "name": "OneWare.Core",
+          "version": "0.12.0.2"
+        }
+      ],
+      "targets": [
+        {
+          "target": "win-x64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.12.0.2/OneWare_GhdlExtension_0.12.0.2_win-x64.zip"
+        },
+        {
+          "target": "linux-x64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.12.0.2/OneWare_GhdlExtension_0.12.0.2_linux-x64.zip"
+        },
+        {
+          "target": "osx-x64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.12.0.2/OneWare_GhdlExtension_0.12.0.2_osx-x64.zip"
+        }
+      ]
+    }
+  ]
+}
