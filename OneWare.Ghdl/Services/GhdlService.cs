@@ -51,7 +51,7 @@ public class GhdlService
             PlatformId.WinX64 => $"{assemblyPath}/native_tools/win-x64/ghdl/GHDL/bin/ghdl.exe",
             PlatformId.LinuxX64 => $"{assemblyPath}/native_tools/linux-x64/ghdl/GHDL/bin/ghdl",
             PlatformId.OsxX64 => $"{assemblyPath}/native_tools/osx-x64/ghdl/GHDL/bin/ghdl",
-            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/osx-x64/ghdl/GHDL/bin/ghdl",
+            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/osx-arm64/ghdl/GHDL/bin/ghdl",
             _ => null,
         };
 

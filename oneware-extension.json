@@ -42,6 +42,10 @@
         {
           "target": "osx-x64",
           "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.12.0.2/OneWare_GhdlExtension_0.12.0.2_osx-x64.zip"
+        },
+        {
+          "target": "osx-arm64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.12.0.2/OneWare_GhdlExtension_0.12.0.2_osx-arm64.zip"
         }
       ]
     }

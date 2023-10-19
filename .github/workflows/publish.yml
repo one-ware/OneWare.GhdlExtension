@@ -11,9 +11,12 @@ on:
 
 jobs:
   build:
-
+    strategy:
+      matrix:
+        target: ["win-x64", "linux-x64", "osx-x64", "osx-arm64"]
+        
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v3
       with:
@@ -21,31 +24,26 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.0.x 
-    - name: Build Windows-x64
-      run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r win-x64 -o publish-win-x64
+        dotnet-version: 7.0.x
+    - name: Get Version
+      uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
+      id: get-version
+      with:
+        proj-path: OneWare.Ghdl/OneWare.Ghdl.csproj
+    - name: Build ${{ matrix.target }}
+      run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r ${{ matrix.target }} -o publish
+    - name: Compress ${{ matrix.target }}
+      uses: thedoctor0/zip-release@0.7.1
+      with:
+        type: 'zip'
+        filename: ../OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_${{ matrix.target }}.zip
+        directory: ./publish
     - uses: actions/upload-artifact@v3
       with:
-        name: OneWare_GhdlExtension_win-x64
+        name: OneWare_GhdlExtension_${{ matrix.target }}
         if-no-files-found: error
         retention-days: 7
-        path: ./publish-win-x64
-    - name: Build Linux-x64
-      run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r linux-x64 -o publish-linux-x64
-    - uses: actions/upload-artifact@v3
-      with:
-        name: OneWare_GhdlExtension_linux-x64
-        if-no-files-found: error
-        retention-days: 7
-        path: ./publish-linux-x64
-    - name: Build osx-x64
-      run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r osx-x64 -o publish-osx-x64
-    - uses: actions/upload-artifact@v3
-      with:
-        name: OneWare_GhdlExtension_osx-x64
-        if-no-files-found: error
-        retention-days: 7
-        path: ./publish-osx-x64
+        path: ./OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_${{ matrix.target }}.zip
         
   release:
     runs-on: ubuntu-latest
@@ -54,7 +52,7 @@ jobs:
     needs: [ build ]
     steps:
       - uses: actions/checkout@v3
-      - name: get-net-sdk-project-versions-action
+      - name: Get Version
         uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
         id: get-version
         with:
@@ -62,27 +60,9 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: ./artifacts
-      - name: Archive Release Win-x64
-        uses: thedoctor0/zip-release@0.7.1
-        with:
-          type: 'zip'
-          filename: ../OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_win-x64.zip
-          directory: ./artifacts/OneWare_GhdlExtension_win-x64
-      - name: Archive Release Linux-x64
-        uses: thedoctor0/zip-release@0.7.1
-        with:
-          type: 'zip'
-          filename: ../OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_linux-x64.zip
-          directory: ./artifacts/OneWare_GhdlExtension_linux-x64
-      - name: Archive Release Osx-x64
-        uses: thedoctor0/zip-release@0.7.1
-        with:
-          type: 'zip'
-          filename: ../OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_osx-x64.zip
-          directory: ./artifacts/OneWare_GhdlExtension_osx-x64
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/**.zip"
+          artifacts: "artifacts/**/*.zip"
           tag: ${{steps.get-version.outputs.version}}
           allowUpdates: true
           
