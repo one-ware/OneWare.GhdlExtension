@@ -11,6 +11,7 @@ public class GhdlModule : IModule
 {
     public void RegisterTypes(IContainerRegistry containerRegistry)
     {
+        containerRegistry.RegisterSingleton<GhdlService>();
     }
 
     public void OnInitialized(IContainerProvider containerProvider)
