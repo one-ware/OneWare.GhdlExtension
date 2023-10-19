@@ -25,7 +25,7 @@ public class GhdlService
     
     public GhdlService(ILogger logger, IActive active, IDockService dockService, IProjectExplorerService projectExplorerService)
     {
-        _logger = logger;
+        _logger = logger; 
         _active = active;
         _dockService = dockService;
         _projectExplorerService = projectExplorerService;
