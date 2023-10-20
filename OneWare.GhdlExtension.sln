@@ -2,6 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneWare.Ghdl", "OneWare.Ghdl\OneWare.Ghdl.csproj", "{35906567-B993-4063-8A1A-1BDD9175DD4A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Properties", "Properties", "{CE826A5A-B35D-42A7-8032-172D0762F9BA}"
+	ProjectSection(SolutionItems) = preProject
+		oneware-extension.json = oneware-extension.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
