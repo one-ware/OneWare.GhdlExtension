@@ -4,10 +4,10 @@
 name: Build
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  workflow_dispatch: # Allow running the workflow manually from the GitHub UI
+  release:
+    types:
+      - published    # Run the workflow when a new GitHub release is published
 
 jobs:
   build:
