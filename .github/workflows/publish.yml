@@ -42,7 +42,7 @@ jobs:
       with:
         name: OneWare_GhdlExtension_${{ matrix.target }}
         if-no-files-found: error
-        retention-days: 7
+        retention-days: 5
         path: ./OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_${{ matrix.target }}.zip
         
   release:
