@@ -18,16 +18,21 @@ public class GhdlModule : IModule
     {
         var ghdlService = containerProvider.Resolve<GhdlService>();
 
-        containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Simulator",
+        containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
             new MenuItemModel("SimulateGHDL")
             {
                 Header = "Simulate with GHDL",
                 Command = ghdlService.SimulateCommand,
             },
-            new MenuItemModel("SynthGHDL")
+            new MenuItemModel("SynthGhdlToDot")
             {
-                Header = "Synth with GHDL",
-                Command = ghdlService.SynthCommand,
+                Header = "Synth with GHDL to Dot",
+                Command = ghdlService.SynthToDotCommand,
+            },
+            new MenuItemModel("SynthGhdlToVerilog")
+            {
+                Header = "Synth with GHDL to Verilog",
+                Command = ghdlService.SynthToVerilogCommand,
             });
 
         containerProvider.Resolve<IWindowService>().RegisterUiExtension("MainWindow_LeftToolBarExtension",

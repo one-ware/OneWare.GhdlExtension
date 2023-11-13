@@ -22,7 +22,7 @@
 
     <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR ('$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Linux')))">
         <UsePackageTarget>linux-x64</UsePackageTarget>
-        <ExternalPackageUrl>https://github.com/ghdl/ghdl/releases/download/v3.0.0/ghdl-gha-ubuntu-20.04-mcode.tgz</ExternalPackageUrl>
+        <ExternalPackageUrl>https://cdn.vhdplus.com/ghdl/ghdl2.0.0-ubuntu20.zip</ExternalPackageUrl>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64' OR ('$(RuntimeIdentifier)' == '' AND ($([MSBuild]::IsOSPlatform('OSX')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64' ))">

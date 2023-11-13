@@ -21,7 +21,11 @@ public class GhdlService
 
     public AsyncRelayCommand SimulateCommand { get; }
     
-    public AsyncRelayCommand SynthCommand { get; }
+    public AsyncRelayCommand SynthToDotCommand { get; }
+    
+    public AsyncRelayCommand SynthToVerilogCommand { get; }
+
+    private readonly string _path;
     
     public GhdlService(ILogger logger, IActive active, IDockService dockService, IProjectExplorerService projectExplorerService)
     {
@@ -30,10 +34,26 @@ public class GhdlService
         _dockService = dockService;
         _projectExplorerService = projectExplorerService;
         
+        var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+
+        _path = PlatformHelper.Platform switch
+        {
+            PlatformId.WinX64 => $"{assemblyPath}/native_tools/win-x64/ghdl/GHDL/bin/ghdl.exe",
+            PlatformId.LinuxX64 => $"{assemblyPath}/native_tools/linux-x64/ghdl/bin/ghdl",
+            PlatformId.OsxX64 => $"{assemblyPath}/native_tools/osx-x64/ghdl/bin/ghdl",
+            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/osx-arm64/ghdl/bin/ghdl",
+            _ => throw new NotSupportedException("GHDL not supported on this platform"),
+        };
+        
+        Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + $":{Path.GetDirectoryName(_path)}");
+        
         SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync, 
             () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
         
-        SynthCommand = new AsyncRelayCommand(SynthCurrentFileAsync, 
+        SynthToDotCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("dot"), 
+            () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
+        
+        SynthToVerilogCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("verilog"), 
             () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
 
         _dockService.WhenValueChanged(x => x.CurrentDocument).Subscribe(x =>
@@ -42,27 +62,11 @@ public class GhdlService
         });
     }
     
-    private static ProcessStartInfo GetGhdlProcessStartInfo(string workingDirectory, string arguments)
+    private ProcessStartInfo GetGhdlProcessStartInfo(string workingDirectory, string arguments)
     {
-        var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
-
-        var start = PlatformHelper.Platform switch
-        {
-            PlatformId.WinX64 => $"{assemblyPath}/native_tools/win-x64/ghdl/GHDL/bin/ghdl.exe",
-            PlatformId.LinuxX64 => $"{assemblyPath}/native_tools/linux-x64/ghdl/bin/ghdl",
-            PlatformId.OsxX64 => $"{assemblyPath}/native_tools/osx-x64/ghdl/bin/ghdl",
-            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/osx-arm64/ghdl/bin/ghdl",
-            _ => null,
-        };
-
-        if (start is null)
-        {
-            throw new NotSupportedException("GHDL not supported on this platform");
-        }
-        
         return new ProcessStartInfo
         {
-            FileName = start,
+            FileName = _path,
             Arguments = $"{arguments}",
             CreateNoWindow = true,
             WorkingDirectory = workingDirectory,
@@ -102,7 +106,7 @@ public class GhdlService
             {
                 _logger.Log(i.Data);
             }
-            output += i.Data;
+            output += i.Data + '\n';
         };
         activeProcess.ErrorDataReceived += (o, i) =>
         {
@@ -142,15 +146,14 @@ public class GhdlService
         return (success,output);
     }
 
-    private Task SynthCurrentFileAsync()
+    private Task SynthCurrentFileAsync(string output)
     {
         if (_dockService.CurrentDocument?.CurrentFile is IProjectFile selectedFile)
-            return SynthAsync(selectedFile);
+            return SynthAsync(selectedFile, output);
         return Task.CompletedTask;
     }
-
     
-    public async Task SynthAsync(IProjectFile file)
+    public async Task SynthAsync(IProjectFile file, string output)
     {
         _dockService.Show<IOutputService>();
 
@@ -159,8 +162,6 @@ public class GhdlService
                 .Select(x => "\"" + x.FullPath + "\""));
 
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
-        var vcdPath = $"{top}.vcd";
-        var waveFormFileArgument = $"--vcd={vcdPath}";
         var ghdlOptions = "--std=02";
         var folder = file.TopFolder!.FullPath;
 
@@ -172,11 +173,18 @@ public class GhdlService
         var elaboration = await ExecuteGhdlShellAsync(folder, $"-e {ghdlOptions} {top}",
             "Running GHDL Elaboration");
         if (!elaboration.success) return;
-        var synth = await ExecuteGhdlShellAsync(folder, $"--synth {ghdlOptions} --out=dot {top}",
+        var synth = await ExecuteGhdlShellAsync(folder, $"--synth {ghdlOptions} --out={output} {top}",
             "Running GHDL Synth");
         if (!synth.success) return;
+
+        var extension = output switch
+        {
+            "dot" => ".dot",
+            "verilog" => ".v",
+            _ => ".file"
+        };
         
-        await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(file.FullPath) ?? "", Path.GetFileName(file.FullPath)+ ".dot"), synth.output);
+        await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(file.FullPath) ?? "", Path.GetFileNameWithoutExtension(file.FullPath)+ extension), synth.output);
     }
 
     private Task SimulateCurrentFileAsync()
