@@ -1,4 +1,7 @@
-﻿using OneWare.Ghdl.Services;
+﻿using Avalonia;
+using Avalonia.Controls;
+using CommunityToolkit.Mvvm.Input;
+using OneWare.Ghdl.Services;
 using OneWare.Ghdl.Views;
 using OneWare.Shared.Models;
 using OneWare.Shared.Services;
@@ -21,18 +24,8 @@ public class GhdlModule : IModule
         containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
             new MenuItemModel("SimulateGHDL")
             {
-                Header = "Simulate with GHDL",
+                Header = "Simulate project with GHDL",
                 Command = ghdlService.SimulateCommand,
-            },
-            new MenuItemModel("SynthGhdlToDot")
-            {
-                Header = "Synth with GHDL to Dot",
-                Command = ghdlService.SynthToDotCommand,
-            },
-            new MenuItemModel("SynthGhdlToVerilog")
-            {
-                Header = "Synth with GHDL to Verilog",
-                Command = ghdlService.SynthToVerilogCommand,
             });
 
         containerProvider.Resolve<IWindowService>().RegisterUiExtension("MainWindow_LeftToolBarExtension",
@@ -41,6 +34,38 @@ public class GhdlModule : IModule
                 DataContext = ghdlService
             });
         
-        containerProvider.Resolve<IModuleTracker>().RecordModuleInitialized(GetType().Name);
+        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(x =>
+        {
+            if (x.Count == 1 && x.First() is IProjectFile { Extension: ".vhd" or ".vhdl" } file)
+            {
+                return new[]
+                {
+                    new MenuItemModel("GHDL")
+                    {
+                        Header = "GHDL",
+                        Items = new IMenuItem[]
+                        {
+                            new MenuItemModel("SimulateWithGHDL")
+                            {
+                                Header = "Simulate with GHDL",
+                                Command = new AsyncRelayCommand(() => ghdlService.SimulateFileAsync(file)),
+                                ImageIconObservable = Application.Current?.GetResourceObservable("Material.Pulse"),
+                            },
+                            new MenuItemModel("SynthGhdlToVerilog")
+                            {
+                                Header = "Convert to Verilog Netlist",
+                                Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "verilog")),
+                            },
+                            new MenuItemModel("SynthGhdlToVerilog")
+                            {
+                                Header = "Convert to Dot Netlist",
+                                Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "dot")),
+                            },
+                        }
+                    }
+                };
+            }
+            return null;
+        });
     }
 }

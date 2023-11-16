@@ -27,7 +27,8 @@
       "dependencies": [
         {
           "name": "OneWare.Core",
-          "version": "0.12.0.5"
+          "version": "0.12.0.5",
+          "maxVersion": "0.12.0.5"
         }
       ],
       "targets": [
