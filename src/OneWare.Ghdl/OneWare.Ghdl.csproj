@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <Version>0.12.0.5</Version>
-        <TargetFramework>net7.0</TargetFramework>
+        <Version>0.2</Version>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <EnableDynamicLoading>true</EnableDynamicLoading>
@@ -12,7 +12,11 @@
     
     <ItemGroup>
         <PackageReference Include="MsBuildUncompressTask" Version="1.0.5"/>
-        <PackageReference Include="OneWare.Shared" Version="0.12.0.5" Private="false" ExcludeAssets="runtime"/>
+        <PackageReference Include="OneWare.Shared" Version="0.12.0.8" Private="false" ExcludeAssets="runtime;Native"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="oneware.json" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
     
     <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' OR ('$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Windows')))">

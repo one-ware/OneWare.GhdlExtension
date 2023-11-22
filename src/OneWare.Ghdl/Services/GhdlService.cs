@@ -8,7 +8,6 @@ using OneWare.Shared.Helpers;
 using OneWare.Shared.Models;
 using OneWare.Shared.Services;
 using OneWare.Shared.ViewModels;
-using Prism.Ioc;
 
 namespace OneWare.Ghdl.Services;
 
@@ -88,7 +87,7 @@ public class GhdlService
 
         using var activeProcess = new Process();
         activeProcess.StartInfo = startInfo;
-        var key = _active.AddState(status, state, activeProcess);
+        var key = _active.AddState(status, state, () => activeProcess?.Kill());
 
         activeProcess.OutputDataReceived += (o, i) =>
         {
