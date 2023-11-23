@@ -3,11 +3,11 @@ using System.Reflection;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
-using OneWare.Shared.Enums;
-using OneWare.Shared.Helpers;
-using OneWare.Shared.Models;
-using OneWare.Shared.Services;
-using OneWare.Shared.ViewModels;
+using OneWare.SDK.Enums;
+using OneWare.SDK.Helpers;
+using OneWare.SDK.Models;
+using OneWare.SDK.Services;
+using OneWare.SDK.ViewModels;
 
 namespace OneWare.Ghdl.Services;
 
