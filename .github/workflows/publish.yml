@@ -29,9 +29,9 @@ jobs:
       uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
       id: get-version
       with:
-        proj-path: OneWare.Ghdl/OneWare.Ghdl.csproj
+        proj-path: src/OneWare.Ghdl/OneWare.Ghdl.csproj
     - name: Build ${{ matrix.target }}
-      run: dotnet build OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r ${{ matrix.target }} -o publish
+      run: dotnet build src/OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r ${{ matrix.target }} -o publish
     - name: Compress ${{ matrix.target }}
       uses: thedoctor0/zip-release@0.7.1
       with:
@@ -56,7 +56,7 @@ jobs:
         uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
         id: get-version
         with:
-          proj-path: OneWare.Ghdl/OneWare.Ghdl.csproj
+          proj-path: src/OneWare.Ghdl/OneWare.Ghdl.csproj
       - uses: actions/download-artifact@v3
         with:
           path: ./artifacts
