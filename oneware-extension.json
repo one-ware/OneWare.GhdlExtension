@@ -1,5 +1,6 @@
 {
   "category": "Simulators",
+  "type": "Plugin",
   "name": "GHDL Extension",
   "id": "GhdlModule",
   "description": "GHDL Integration for OneWare",
