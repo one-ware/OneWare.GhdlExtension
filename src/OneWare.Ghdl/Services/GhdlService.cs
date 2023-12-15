@@ -1,22 +1,26 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
-using OneWare.Shared.Enums;
-using OneWare.Shared.Helpers;
-using OneWare.Shared.Models;
-using OneWare.Shared.Services;
-using OneWare.Shared.ViewModels;
+using OneWare.SDK.Enums;
+using OneWare.SDK.Helpers;
+using OneWare.SDK.Models;
+using OneWare.SDK.NativeTools;
+using OneWare.SDK.Services;
+using OneWare.SDK.ViewModels;
 
 namespace OneWare.Ghdl.Services;
 
 public class GhdlService
 {
     private readonly ILogger _logger;
-    private readonly IActive _active;
+    private readonly IApplicationStateService _applicationStateService;
     private readonly IDockService _dockService;
     private readonly IProjectExplorerService _projectExplorerService;
+    private readonly INativeToolService _nativeToolService;
 
     public AsyncRelayCommand SimulateCommand { get; }
     
@@ -24,27 +28,23 @@ public class GhdlService
     
     public AsyncRelayCommand SynthToVerilogCommand { get; }
 
-    private readonly string _path;
+    private string _path = string.Empty;
     
-    public GhdlService(ILogger logger, IActive active, IDockService dockService, IProjectExplorerService projectExplorerService)
+    private readonly NativeToolContainer _nativeToolContainer;
+    
+    public GhdlService(ILogger logger, IApplicationStateService applicationStateService, IDockService dockService, IProjectExplorerService projectExplorerService, ISettingsService settingsService, INativeToolService nativeToolService)
     {
         _logger = logger; 
-        _active = active;
+        _applicationStateService = applicationStateService;
         _dockService = dockService;
         _projectExplorerService = projectExplorerService;
-        
-        var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        _nativeToolService = nativeToolService;
+        _nativeToolContainer = nativeToolService.Get("ghdl")!;
 
-        _path = PlatformHelper.Platform switch
+        settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
         {
-            PlatformId.WinX64 => $"{assemblyPath}/native_tools/win-x64/ghdl/GHDL/bin/ghdl.exe",
-            PlatformId.LinuxX64 => $"{assemblyPath}/native_tools/linux-x64/ghdl/bin/ghdl",
-            PlatformId.OsxX64 => $"{assemblyPath}/native_tools/osx-x64/ghdl/bin/ghdl",
-            PlatformId.OsxArm64 => $"{assemblyPath}/native_tools/osx-arm64/ghdl/bin/ghdl",
-            _ => throw new NotSupportedException("GHDL not supported on this platform"),
-        };
-        
-        Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + $":{Path.GetDirectoryName(_path)}");
+            _path = x;
+        });
         
         SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync, 
             () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
@@ -74,10 +74,24 @@ public class GhdlService
             UseShellExecute = false
         };
     }
+
+    private async Task<bool> InstallGhdlAsync()
+    {
+        var result = await _nativeToolService.InstallAsync(_nativeToolContainer);
+        
+        Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + $":{Path.GetDirectoryName(_path)}");
+        
+        return result;
+    }
     
     private async Task<(bool success, string output)> ExecuteGhdlShellAsync(string workingDirectory, string arguments, string status = "Running GHDL", AppState state = AppState.Loading)
     {
         var success = true;
+
+        if (!Directory.Exists(_path))
+        {
+            if(!await InstallGhdlAsync()) return (false, string.Empty);
+        }
         
         _logger.Log($"ghdl {arguments}", ConsoleColor.DarkCyan, true, Brushes.CornflowerBlue);
 
@@ -87,7 +101,7 @@ public class GhdlService
 
         using var activeProcess = new Process();
         activeProcess.StartInfo = startInfo;
-        var key = _active.AddState(status, state, () => activeProcess?.Kill());
+        var key = _applicationStateService.AddState(status, state, () => activeProcess?.Kill());
 
         activeProcess.OutputDataReceived += (o, i) =>
         {
@@ -95,15 +109,15 @@ public class GhdlService
             if (i.Data.Contains("error"))
             {
                 success = false;
-                _logger.Error(i.Data);
+                Dispatcher.UIThread.Post(() => _logger.Error(i.Data));
             }
             else if (i.Data.Contains("warning"))
             {
-                _logger.Warning(i.Data);
+                Dispatcher.UIThread.Post(() => _logger.Warning(i.Data));
             }
             else
             {
-                _logger.Log(i.Data);
+                Dispatcher.UIThread.Post(() => _logger.Log(i.Data));
             }
             output += i.Data + '\n';
         };
@@ -113,13 +127,13 @@ public class GhdlService
             {
                 if (i.Data.Contains("warning", StringComparison.OrdinalIgnoreCase))
                 {
-                    _logger.Warning("[GHDL Warning]: " + i.Data);
+                    Dispatcher.UIThread.Post(() => _logger.Error("[GHDL Warning]: " + i.Data));
                     //ParseGhdlError(i.Data, ErrorType.Warning);
                 }
                 else
                 {
                     success = false;
-                    _logger.Error("[GHDL Error]: " + i.Data);
+                    Dispatcher.UIThread.Post(() => _logger.Error("[GHDL Error]: " + i.Data));
                     //ParseGhdlError(i.Data, ErrorType.Error);
                 }
             }
@@ -140,7 +154,7 @@ public class GhdlService
         }
 
         if (key.Terminated) success = false;
-        _active.RemoveState(key);
+        _applicationStateService.RemoveState(key);
 
         return (success,output);
     }
