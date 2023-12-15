@@ -88,7 +88,7 @@ public class GhdlService
     {
         var success = true;
 
-        if (!Directory.Exists(_path))
+        if (!File.Exists(_path))
         {
             if(!await InstallGhdlAsync()) return (false, string.Empty);
         }
