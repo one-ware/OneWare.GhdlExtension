@@ -32,7 +32,7 @@ public class GhdlModule : IModule
         
         nativeTool.AddPlatform(PlatformId.LinuxX64,
                 "https://cdn.vhdplus.com/ghdl/ghdl2.0.0-ubuntu20.zip")
-            .WithShortcut("ghdlExecutable", "ghdl/bin/ghdl", GhdlPathSetting);
+            .WithShortcut("ghdlExecutable", "bin/ghdl", GhdlPathSetting);
         
         nativeTool.AddPlatform(PlatformId.OsxX64,
                 "https://github.com/ghdl/ghdl/releases/download/v3.0.0/ghdl-macos-11-mcode.tgz")
