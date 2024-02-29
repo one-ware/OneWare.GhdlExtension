@@ -1,16 +1,13 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
-using OneWare.SDK.Enums;
-using OneWare.SDK.Helpers;
-using OneWare.SDK.Models;
-using OneWare.SDK.NativeTools;
-using OneWare.SDK.Services;
-using OneWare.SDK.ViewModels;
+using OneWare.Essentials.Enums;
+using OneWare.Essentials.Models;
+using OneWare.Essentials.NativeTools;
+using OneWare.Essentials.Services;
+using OneWare.Essentials.ViewModels;
 
 namespace OneWare.Ghdl.Services;
 

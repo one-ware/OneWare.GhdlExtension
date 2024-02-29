@@ -1,9 +1,9 @@
 {
   "dependencies": [
     {
-      "name": "OneWare.SDK",
-      "minVersion": "0.12.9.0",
-      "maxVersion": "0.12.9.0"
+      "name": "OneWare.Essentials",
+      "minVersion": "0.1.0.0",
+      "maxVersion": "0.1.0.0"
     }
   ]
 }
