@@ -51,11 +51,8 @@ public class GhdlModule : IModule
                 Command = ghdlService.SimulateCommand,
             });
 
-        containerProvider.Resolve<IWindowService>().RegisterUiExtension("MainWindow_LeftToolBarExtension",
-            new GhdlMainWindowToolBarExtension()
-            {
-                DataContext = ghdlService
-            });
+        containerProvider.Resolve<IWindowService>()
+            .RegisterUiExtension<GhdlMainWindowToolBarExtension>("MainWindow_LeftToolBarExtension", ghdlService);
         
         containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(x =>
         {
