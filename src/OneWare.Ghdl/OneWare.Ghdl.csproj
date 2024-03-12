@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <Version>0.6</Version>
+        <Version>0.7</Version>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -9,13 +9,14 @@
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <SelfContained>false</SelfContained>
     </PropertyGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="OneWare.Essentials" Version="0.3.1" Private="false" ExcludeAssets="runtime;Native"/>
+        <Content Include="oneware.json" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
     
     <ItemGroup>
-        <Content Include="oneware.json" CopyToOutputDirectory="PreserveNewest"/>
+        <PackageReference Include="OneWare.Essentials" Version="0.4" Private="false" ExcludeAssets="runtime;Native"/>
+        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.16" Private="false" ExcludeAssets="runtime;Native"/>
     </ItemGroup>
     
 </Project>

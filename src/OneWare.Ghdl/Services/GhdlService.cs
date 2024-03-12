@@ -4,7 +4,9 @@ using System.Runtime.InteropServices;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Threading;
+using AvaloniaEdit.Utils;
 using CommunityToolkit.Mvvm.Input;
+using DynamicData;
 using DynamicData.Binding;
 using OneWare.Essentials.Enums;
 using OneWare.Essentials.Helpers;
@@ -22,38 +24,52 @@ public class GhdlService
     private readonly IDockService _dockService;
     private readonly IProjectExplorerService _projectExplorerService;
     private readonly INativeToolService _nativeToolService;
+    private readonly IChildProcessService _childProcessService;
 
     public AsyncRelayCommand SimulateCommand { get; }
-    
+
     public AsyncRelayCommand SynthToDotCommand { get; }
-    
+
     public AsyncRelayCommand SynthToVerilogCommand { get; }
 
     private string _path = string.Empty;
-    
+
     private readonly NativeToolContainer _nativeToolContainer;
-    
-    public GhdlService(ILogger logger, IApplicationStateService applicationStateService, IDockService dockService, IProjectExplorerService projectExplorerService, ISettingsService settingsService, INativeToolService nativeToolService)
+
+    public GhdlService(ILogger logger, IApplicationStateService applicationStateService, IDockService dockService,
+        IProjectExplorerService projectExplorerService, ISettingsService settingsService,
+        INativeToolService nativeToolService, IChildProcessService childProcessService)
     {
-        _logger = logger; 
+        _logger = logger;
         _applicationStateService = applicationStateService;
         _dockService = dockService;
         _projectExplorerService = projectExplorerService;
         _nativeToolService = nativeToolService;
+        _childProcessService = childProcessService;
         _nativeToolContainer = nativeToolService.Get("ghdl")!;
 
         settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
         {
             _path = x;
+            if (File.Exists(x))
+            {
+                var environmentPathSetting = PlatformHelper.Platform switch
+                {
+                    PlatformId.WinX64 or PlatformId.WinArm64 => $";{Path.GetDirectoryName(x)};",
+                    _ => $":{Path.GetDirectoryName(x)}:"
+                };
+                var currentPath = Environment.GetEnvironmentVariable("PATH");
+                Environment.SetEnvironmentVariable("PATH", $"{environmentPathSetting}{currentPath}");
+            }
         });
-        
-        SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync, 
+
+        SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync,
             () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
-        
-        SynthToDotCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("dot"), 
+
+        SynthToDotCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("dot"),
             () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
-        
-        SynthToVerilogCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("verilog"), 
+
+        SynthToVerilogCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("verilog"),
             () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
 
         _dockService.WhenValueChanged(x => x.CurrentDocument).Subscribe(x =>
@@ -61,108 +77,22 @@ public class GhdlService
             SimulateCommand.NotifyCanExecuteChanged();
         });
     }
-    
-    private ProcessStartInfo GetGhdlProcessStartInfo(string workingDirectory, string arguments)
+
+    private async Task<(bool success, string output)> ExecuteGhdlAsync(IReadOnlyCollection<string> arguments, string workingDirectory, string status,
+        AppState state = AppState.Loading, bool showTimer = false, Action<string>? outputAction = null, Func<string, bool>? errorAction = null)
     {
-        return new ProcessStartInfo
+        if (!File.Exists(_path))
         {
-            FileName = _path,
-            Arguments = $"{arguments}",
-            CreateNoWindow = true,
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
+            var install = await InstallGhdlAsync();
+            if (!install) return (false,string.Empty);
+        }
+        return await _childProcessService.ExecuteShellAsync("ghdl", arguments, workingDirectory,
+            status, state, showTimer, outputAction, errorAction);
     }
 
     private async Task<bool> InstallGhdlAsync()
     {
-        var result = await _nativeToolService.InstallAsync(_nativeToolContainer);
-        
-        Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + $":{Path.GetDirectoryName(_path)}");
-        
-        return result;
-    }
-    
-    private async Task<(bool success, string output)> ExecuteGhdlShellAsync(string workingDirectory, string arguments, string status = "Running GHDL", AppState state = AppState.Loading)
-    {
-        var success = true;
-
-        if (!File.Exists(_path))
-        {
-            if(!await InstallGhdlAsync()) return (false, string.Empty);
-        }
-
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            PlatformHelper.ChmodFile(_path);
-        }
-        
-        _logger.Log($"ghdl {arguments}", ConsoleColor.DarkCyan, true, Brushes.CornflowerBlue);
-
-        var output = string.Empty;
-        
-        var startInfo = GetGhdlProcessStartInfo(workingDirectory, arguments);
-
-        using var activeProcess = new Process();
-        activeProcess.StartInfo = startInfo;
-        var key = _applicationStateService.AddState(status, state, () => activeProcess?.Kill());
-
-        activeProcess.OutputDataReceived += (o, i) =>
-        {
-            if (string.IsNullOrEmpty(i.Data)) return;
-            if (i.Data.Contains("error"))
-            {
-                success = false;
-                Dispatcher.UIThread.Post(() => _logger.Error(i.Data));
-            }
-            else if (i.Data.Contains("warning"))
-            {
-                Dispatcher.UIThread.Post(() => _logger.Warning(i.Data));
-            }
-            else
-            {
-                Dispatcher.UIThread.Post(() => _logger.Log(i.Data));
-            }
-            output += i.Data + '\n';
-        };
-        activeProcess.ErrorDataReceived += (o, i) =>
-        {
-            if (!string.IsNullOrWhiteSpace(i.Data))
-            {
-                if (i.Data.Contains("warning", StringComparison.OrdinalIgnoreCase))
-                {
-                    Dispatcher.UIThread.Post(() => _logger.Error("[GHDL Warning]: " + i.Data));
-                    //ParseGhdlError(i.Data, ErrorType.Warning);
-                }
-                else
-                {
-                    success = false;
-                    Dispatcher.UIThread.Post(() => _logger.Error("[GHDL Error]: " + i.Data));
-                    //ParseGhdlError(i.Data, ErrorType.Error);
-                }
-            }
-        };
-
-        try
-        {
-            activeProcess.Start();
-            activeProcess.BeginOutputReadLine();
-            activeProcess.BeginErrorReadLine();
-
-            await Task.Run(() => activeProcess.WaitForExit());
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e.Message, e);
-            success = false;
-        }
-
-        if (key.Terminated) success = false;
-        _applicationStateService.RemoveState(key);
-
-        return (success,output);
+        return await _nativeToolService.InstallAsync(_nativeToolContainer);
     }
 
     private Task SynthCurrentFileAsync(string output)
@@ -171,39 +101,75 @@ public class GhdlService
             return SynthAsync(selectedFile, output);
         return Task.CompletedTask;
     }
-    
-    public async Task SynthAsync(IProjectFile file, string output)
+
+    private async Task<bool> ElaborateAsync(IProjectFile file)
+    {
+        var vhdlFiles = file.Root.Files
+            .Where(x => x.Extension is ".vhd" or ".vhdl")
+            .Select(x => x.RelativePath);
+
+        var top = Path.GetFileNameWithoutExtension(file.FullPath);
+        var workingDirectory = file.Root!.FullPath;
+        List<string> ghdlOptions = ["--std=02"];
+
+        List<string> ghdlInitArguments = ["-i"];
+        ghdlInitArguments.AddRange(ghdlOptions);
+        ghdlInitArguments.AddRange(vhdlFiles);
+
+        List<string> ghdlMakeArguments = ["-m"];
+        ghdlMakeArguments.AddRange(ghdlOptions);
+        ghdlMakeArguments.Add(top);
+
+        List<string> ghdlElaborateArguments = ["-e"];
+        ghdlElaborateArguments.AddRange(ghdlOptions);
+        ghdlElaborateArguments.Add(top);
+
+        var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
+            "GHDL Init...",
+            AppState.Loading, true);
+        if (!initFiles.success) return false;
+
+        var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
+            "Running GHDL Make...", AppState.Loading, true);
+        if (!make.success) return false;
+
+        var elaboration = await ExecuteGhdlAsync(ghdlElaborateArguments, workingDirectory,
+            "Running GHDL Elaboration...", AppState.Loading, true);
+        if (!elaboration.success) return false;
+
+        return true;
+    }
+
+    public async Task SynthAsync(IProjectFile file, string outputType)
     {
         _dockService.Show<IOutputService>();
 
-        var vhdlFiles = string.Join(' ',
-            file.Root.Files.Where(x => x.Extension is ".vhd" or ".vhdl")
-                .Select(x => "\"" + x.FullPath + "\""));
-
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
-        var ghdlOptions = "--std=02";
-        var folder = file.TopFolder!.FullPath;
+        var workingDirectory = file.Root!.FullPath;
+        List<string> ghdlOptions = ["--std=02"];
 
-        var initFiles = await ExecuteGhdlShellAsync(folder, $"-i {ghdlOptions} {vhdlFiles}",
-            "GHDL Initializing generated files");
-        if (!initFiles.success) return;
-        var make = await ExecuteGhdlShellAsync(folder, $"-m {ghdlOptions} {top}", "Running GHDL Make");
-        if (!make.success) return;
-        var elaboration = await ExecuteGhdlShellAsync(folder, $"-e {ghdlOptions} {top}",
-            "Running GHDL Elaboration");
-        if (!elaboration.success) return;
-        var synth = await ExecuteGhdlShellAsync(folder, $"--synth {ghdlOptions} --out={output} {top}",
-            "Running GHDL Synth");
+        var elaborateResult = await ElaborateAsync(file);
+        if (!elaborateResult) return;
+
+        List<string> ghdlSynthArguments = ["--synth"];
+        ghdlSynthArguments.AddRange(ghdlOptions);
+        ghdlSynthArguments.Add($"--out={outputType}");
+        ghdlSynthArguments.Add(top);
+
+        var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
+            "Running GHDL Synth...", AppState.Loading, true);
         if (!synth.success) return;
 
-        var extension = output switch
+        var extension = outputType switch
         {
             "dot" => ".dot",
             "verilog" => ".v",
             _ => ".file"
         };
-        
-        await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(file.FullPath) ?? "", Path.GetFileNameWithoutExtension(file.FullPath)+ extension), synth.output);
+
+        await File.WriteAllTextAsync(
+            Path.Combine(Path.GetDirectoryName(file.FullPath) ?? "",
+                Path.GetFileNameWithoutExtension(file.FullPath) + extension), synth.output);
     }
 
     private Task SimulateCurrentFileAsync()
@@ -212,42 +178,37 @@ public class GhdlService
             return SimulateFileAsync(selectedFile);
         return Task.CompletedTask;
     }
-    
+
     public async Task SimulateFileAsync(IProjectFile file)
     {
         _dockService.Show<IOutputService>();
-        
-        var vhdlFiles = string.Join(' ',
-            file.Root.Files.Where(x => x.Extension is ".vhd" or ".vhdl")
-                .Select(x => "\"" + x.FullPath + "\""));
 
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
-        var vcdPath = $"{top}.vcd";
+        var workingDirectory = file.Root!.FullPath;
+        List<string> ghdlOptions = ["--std=02"];
+        var vcdPath = Path.Combine(file.TopFolder!.RelativePath,$"{top}.vcd");
         var waveFormFileArgument = $"--vcd={vcdPath}";
-        var ghdlOptions = "--std=02";
-        var simulatingOptions = "--ieee-asserts=disable";
-        var folder = file.TopFolder!.FullPath;
-        
-        var initFiles = await ExecuteGhdlShellAsync(folder, $"-i {ghdlOptions} {vhdlFiles}",
-            "GHDL Initializing generated files");
-        if (!initFiles.success) return;
-        var make = await ExecuteGhdlShellAsync(folder, $"-m {ghdlOptions} {top}", "Running GHDL Make");
-        if (!make.success) return;
-        var elaboration = await ExecuteGhdlShellAsync(folder, $"-e {ghdlOptions} {top}",
-            "Running GHDL Elaboration");
-        if (!elaboration.success) return;
-                    
-        var openFile = file.TopFolder.Search($"{top}.vcd") as IProjectFile;
+        List<string> simulatingOptions = ["--ieee-asserts=disable"];
+
+        var elaborateResult = await ElaborateAsync(file);
+        if (!elaborateResult) return;
+
+        var openFile = file.TopFolder!.SearchName($"{top}.vcd") as IProjectFile;
         openFile ??= file.TopFolder.AddFile(vcdPath, true);
-        
+
         var doc = await _dockService.OpenFileAsync(openFile);
         if (doc is IStreamableDocument vcd)
-        {   
+        {
             vcd.PrepareLiveStream();
         }
-        
-        var run = await ExecuteGhdlShellAsync(folder,
-            $"-r {ghdlOptions} {top} {waveFormFileArgument} {simulatingOptions}",
-            "Running GHDL Simulation");
+
+        List<string> ghdlRunArguments = ["-r"];
+        ghdlRunArguments.AddRange(ghdlOptions);
+        ghdlRunArguments.Add(top);
+        ghdlRunArguments.Add(waveFormFileArgument);
+        ghdlRunArguments.AddRange(simulatingOptions);
+
+        var run = await ExecuteGhdlAsync(ghdlRunArguments, workingDirectory,
+            "Running GHDL Simulation...", AppState.Loading, true);
     }
 }
