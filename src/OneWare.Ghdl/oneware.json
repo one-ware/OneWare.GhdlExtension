@@ -8,7 +8,7 @@
     {
       "Name": "OneWare.UniversalFpgaProjectSystem",
       "MinVersion": "0.16.1.0",
-      "MaxVersion": "0.16.1.0"
+      "MaxVersion": "0.16.2.0"
     }
   ]
 }
