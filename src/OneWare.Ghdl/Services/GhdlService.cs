@@ -14,6 +14,8 @@ using OneWare.Essentials.Models;
 using OneWare.Essentials.NativeTools;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
+using OneWare.Ghdl.ViewModels;
+using OneWare.UniversalFpgaProjectSystem.Context;
 
 namespace OneWare.Ghdl.Services;
 
@@ -51,16 +53,7 @@ public class GhdlService
         settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
         {
             _path = x;
-            if (File.Exists(x))
-            {
-                var environmentPathSetting = PlatformHelper.Platform switch
-                {
-                    PlatformId.WinX64 or PlatformId.WinArm64 => $";{Path.GetDirectoryName(x)};",
-                    _ => $":{Path.GetDirectoryName(x)}:"
-                };
-                var currentPath = Environment.GetEnvironmentVariable("PATH");
-                Environment.SetEnvironmentVariable("PATH", $"{environmentPathSetting}{currentPath}");
-            }
+            SetEnvironment();
         });
 
         SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync,
@@ -79,7 +72,7 @@ public class GhdlService
     }
 
     private async Task<(bool success, string output)> ExecuteGhdlAsync(IReadOnlyCollection<string> arguments, string workingDirectory, string status,
-        AppState state = AppState.Loading, bool showTimer = false, Action<string>? outputAction = null, Func<string, bool>? errorAction = null)
+        AppState state = AppState.Loading, bool showTimer = false)
     {
         if (!File.Exists(_path))
         {
@@ -87,12 +80,41 @@ public class GhdlService
             if (!install) return (false,string.Empty);
         }
         return await _childProcessService.ExecuteShellAsync("ghdl", arguments, workingDirectory,
-            status, state, showTimer, outputAction, errorAction);
+            status, state, showTimer, x =>
+            {
+                if (x.StartsWith("ghdl:error:"))
+                {
+                    _logger.Error(x);
+                    return false;
+                }
+                _logger.Log(x, ConsoleColor.Black, true);
+                return true;
+            });
     }
 
     private async Task<bool> InstallGhdlAsync()
     {
-        return await _nativeToolService.InstallAsync(_nativeToolContainer);
+        var result = await _nativeToolService.InstallAsync(_nativeToolContainer);
+        if (result)
+        {
+            SetEnvironment();
+            return true;
+        }
+        return false;
+    }
+
+    private void SetEnvironment()
+    {
+        if (File.Exists(_path))
+        {
+            var environmentPathSetting = PlatformHelper.Platform switch
+            {
+                PlatformId.WinX64 or PlatformId.WinArm64 => $";{Path.GetDirectoryName(_path)};",
+                _ => $":{Path.GetDirectoryName(_path)}:"
+            };
+            var currentPath = Environment.GetEnvironmentVariable("PATH");
+            Environment.SetEnvironmentVariable("PATH", $"{environmentPathSetting}{currentPath}");
+        }
     }
 
     private Task SynthCurrentFileAsync(string output)
@@ -102,7 +124,7 @@ public class GhdlService
         return Task.CompletedTask;
     }
 
-    private async Task<bool> ElaborateAsync(IProjectFile file)
+    private async Task<bool> ElaborateAsync(IProjectFile file, TestBenchContext context)
     {
         var vhdlFiles = file.Root.Files
             .Where(x => x.Extension is ".vhd" or ".vhdl")
@@ -143,12 +165,14 @@ public class GhdlService
     public async Task SynthAsync(IProjectFile file, string outputType)
     {
         _dockService.Show<IOutputService>();
+        
+        var settings = await TestBenchContextManager.LoadContextAsync(file);
 
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
         var workingDirectory = file.Root!.FullPath;
         List<string> ghdlOptions = ["--std=02"];
 
-        var elaborateResult = await ElaborateAsync(file);
+        var elaborateResult = await ElaborateAsync(file, settings);
         if (!elaborateResult) return;
 
         List<string> ghdlSynthArguments = ["--synth"];
@@ -182,15 +206,32 @@ public class GhdlService
     public async Task SimulateFileAsync(IProjectFile file)
     {
         _dockService.Show<IOutputService>();
-
+        
+        var settings = await TestBenchContextManager.LoadContextAsync(file);
+        
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
         var workingDirectory = file.Root!.FullPath;
-        List<string> ghdlOptions = ["--std=02"];
+        List<string> ghdlOptions = [];
         var vcdPath = Path.Combine(file.TopFolder!.RelativePath,$"{top}.vcd");
         var waveFormFileArgument = $"--vcd={vcdPath}";
-        List<string> simulatingOptions = ["--ieee-asserts=disable"];
+        List<string> simulatingOptions = [];
+        
+        var additionalGhdlOptions = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
+        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
+        
+        var additionalGhdlSimOptions = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlSimOptions));
+        if(additionalGhdlSimOptions != null) simulatingOptions.AddRange(additionalGhdlSimOptions.Split(' '));
+        
+        var vhdlStandard = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
+        
+        var assertLevel = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AssertLevel));
+        if(assertLevel != null) simulatingOptions.Add($"--assert-level={assertLevel}");
+        
+        var stopTime = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.SimulationStopTime));
+        if(stopTime != null) simulatingOptions.Add($"--stop-time={stopTime}");
 
-        var elaborateResult = await ElaborateAsync(file);
+        var elaborateResult = await ElaborateAsync(file, settings);
         if (!elaborateResult) return;
 
         var openFile = file.TopFolder!.SearchName($"{top}.vcd") as IProjectFile;
