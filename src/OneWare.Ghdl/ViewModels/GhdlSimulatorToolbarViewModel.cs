@@ -17,7 +17,7 @@ public class GhdlSimulatorToolbarViewModel(TestBenchContext context, IFpgaSimula
         }
     }
     
-    public string[] AvailableVhdlStandards => ["87", "93", "93c", "00", "02", "02", "08", "19"];
+    public string[] AvailableVhdlStandards => ["87", "93", "93c", "00", "02", "08", "19"];
     public string VhdlStandard
     {
         get => context.GetBenchProperty(nameof(VhdlStandard)) ?? "93c";
