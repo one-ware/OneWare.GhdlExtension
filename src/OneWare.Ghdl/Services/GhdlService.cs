@@ -22,11 +22,10 @@ namespace OneWare.Ghdl.Services;
 public class GhdlService
 {
     private readonly ILogger _logger;
-    private readonly IApplicationStateService _applicationStateService;
     private readonly IDockService _dockService;
-    private readonly IProjectExplorerService _projectExplorerService;
     private readonly INativeToolService _nativeToolService;
     private readonly IChildProcessService _childProcessService;
+    private readonly IEnvironmentService _environmentService;
 
     public AsyncRelayCommand SimulateCommand { get; }
 
@@ -38,16 +37,14 @@ public class GhdlService
 
     private readonly NativeToolContainer _nativeToolContainer;
 
-    public GhdlService(ILogger logger, IApplicationStateService applicationStateService, IDockService dockService,
-        IProjectExplorerService projectExplorerService, ISettingsService settingsService,
-        INativeToolService nativeToolService, IChildProcessService childProcessService)
+    public GhdlService(ILogger logger, IDockService dockService, ISettingsService settingsService,
+        INativeToolService nativeToolService, IChildProcessService childProcessService, IEnvironmentService environmentService)
     {
         _logger = logger;
-        _applicationStateService = applicationStateService;
         _dockService = dockService;
-        _projectExplorerService = projectExplorerService;
         _nativeToolService = nativeToolService;
         _childProcessService = childProcessService;
+        _environmentService = environmentService;
         _nativeToolContainer = nativeToolService.Get("ghdl")!;
 
         settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
@@ -107,13 +104,7 @@ public class GhdlService
     {
         if (File.Exists(_path))
         {
-            var environmentPathSetting = PlatformHelper.Platform switch
-            {
-                PlatformId.WinX64 or PlatformId.WinArm64 => $";{Path.GetDirectoryName(_path)};",
-                _ => $":{Path.GetDirectoryName(_path)}:"
-            };
-            var currentPath = Environment.GetEnvironmentVariable("PATH");
-            Environment.SetEnvironmentVariable("PATH", $"{environmentPathSetting}{currentPath}");
+            _environmentService.SetPath("GHDL_PATH", Path.GetDirectoryName(_path));
         }
     }
 

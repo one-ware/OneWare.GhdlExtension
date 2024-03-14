@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <Version>0.7</Version>
+        <Version>0.8</Version>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -15,8 +15,8 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="OneWare.Essentials" Version="0.4.1" Private="false" ExcludeAssets="runtime;Native"/>
-        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.16.1" Private="false" ExcludeAssets="runtime;Native"/>
+        <PackageReference Include="OneWare.Essentials" Version="0.4.2" Private="false" ExcludeAssets="runtime;Native"/>
+        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.16.3" Private="false" ExcludeAssets="runtime;Native"/>
     </ItemGroup>
     
 </Project>
