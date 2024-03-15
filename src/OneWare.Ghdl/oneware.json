@@ -2,13 +2,13 @@
   "Dependencies": [
     {
       "Name": "OneWare.Essentials",
-      "MinVersion": "0.4.2.0",
-      "MaxVersion": "0.4.2.0"
+      "MinVersion": "0.4.3.0",
+      "MaxVersion": "0.4.3.0"
     },
     {
       "Name": "OneWare.UniversalFpgaProjectSystem",
-      "MinVersion": "0.16.3.0",
-      "MaxVersion": "0.16.3.0"
+      "MinVersion": "0.16.4.0",
+      "MaxVersion": "0.16.4.0"
     }
   ]
 }

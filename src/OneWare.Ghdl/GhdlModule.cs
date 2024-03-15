@@ -2,7 +2,6 @@
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Input;
 using OneWare.Ghdl.Services;
-using OneWare.Ghdl.Views;
 using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.Services;
@@ -61,41 +60,36 @@ public class GhdlModule : IModule
         
         containerProvider.Resolve<FpgaService>().RegisterSimulator<GhdlSimulator>();
 
-        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(x =>
+        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu((x,l) =>
         {
             if (x is [IProjectFile { Extension: ".vhd" or ".vhdl" } file])
             {
-                return new[]
+                l.Add(new MenuItemViewModel("GHDL")
                 {
-                    new MenuItemViewModel("GHDL")
-                    {
-                        Header = "GHDL",
-                        Items =
-                        [
-                            new MenuItemViewModel("SimulateWithGHDL")
-                            {
-                                Header = "Simulate with GHDL",
-                                Command = new AsyncRelayCommand(() => ghdlService.SimulateFileAsync(file)),
-                                IconObservable = Application.Current!.GetResourceObservable("Material.Pulse"),
-                            },
+                    Header = "GHDL",
+                    Items =
+                    [
+                        new MenuItemViewModel("SimulateWithGHDL")
+                        {
+                            Header = "Simulate with GHDL",
+                            Command = new AsyncRelayCommand(() => ghdlService.SimulateFileAsync(file)),
+                            IconObservable = Application.Current!.GetResourceObservable("Material.Pulse"),
+                        },
 
-                            new MenuItemViewModel("SynthGhdlToVerilog")
-                            {
-                                Header = "Convert to Verilog Netlist",
-                                Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "verilog")),
-                            },
+                        new MenuItemViewModel("SynthGhdlToVerilog")
+                        {
+                            Header = "Convert to Verilog Netlist",
+                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "verilog")),
+                        },
 
-                            new MenuItemViewModel("SynthGhdlToVerilog")
-                            {
-                                Header = "Convert to Dot Netlist",
-                                Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "dot")),
-                            }
-                        ]
-                    }
-                };
+                        new MenuItemViewModel("SynthGhdlToVerilog")
+                        {
+                            Header = "Convert to Dot Netlist",
+                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "dot")),
+                        }
+                    ]
+                });
             }
-
-            return null;
         });
     }
 }
