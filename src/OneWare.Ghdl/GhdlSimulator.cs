@@ -29,9 +29,9 @@ public class GhdlSimulator : IFpgaSimulator
         });
     }
     
-    public Task SimulateAsync(IFile file)
+    public Task<bool> SimulateAsync(IFile file)
     {
         if (file is IProjectFile projectFile) return _ghdlService.SimulateFileAsync(projectFile);
-        return Task.CompletedTask;
+        return Task.FromResult(false);
     }
 }

@@ -26,6 +26,7 @@ public class GhdlService
     private readonly INativeToolService _nativeToolService;
     private readonly IChildProcessService _childProcessService;
     private readonly IEnvironmentService _environmentService;
+    private readonly IOutputService _outputService;
 
     public AsyncRelayCommand SimulateCommand { get; }
 
@@ -38,13 +39,15 @@ public class GhdlService
     private readonly NativeToolContainer _nativeToolContainer;
 
     public GhdlService(ILogger logger, IDockService dockService, ISettingsService settingsService,
-        INativeToolService nativeToolService, IChildProcessService childProcessService, IEnvironmentService environmentService)
+        INativeToolService nativeToolService, IChildProcessService childProcessService, IEnvironmentService environmentService,
+        IOutputService outputService)
     {
         _logger = logger;
         _dockService = dockService;
         _nativeToolService = nativeToolService;
         _childProcessService = childProcessService;
         _environmentService = environmentService;
+        _outputService = outputService;
         _nativeToolContainer = nativeToolService.Get("ghdl")!;
 
         settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
@@ -84,7 +87,7 @@ public class GhdlService
                     _logger.Error(x);
                     return false;
                 }
-                _logger.Log(x, ConsoleColor.Black, true);
+                _outputService.WriteLine(x);
                 return true;
             });
     }
@@ -153,7 +156,7 @@ public class GhdlService
         return true;
     }
 
-    public async Task SynthAsync(IProjectFile file, string outputType, string outputDirectory)
+    public async Task<bool> SynthAsync(IProjectFile file, string outputType, string outputDirectory)
     {
         _dockService.Show<IOutputService>();
         
@@ -164,7 +167,7 @@ public class GhdlService
         List<string> ghdlOptions = ["--std=02"];
 
         var elaborateResult = await ElaborateAsync(file, settings);
-        if (!elaborateResult) return;
+        if (!elaborateResult) return false;
 
         List<string> ghdlSynthArguments = ["--synth"];
         ghdlSynthArguments.AddRange(ghdlOptions);
@@ -173,7 +176,7 @@ public class GhdlService
 
         var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
             "Running GHDL Synth...", AppState.Loading, true);
-        if (!synth.success) return;
+        if (!synth.success) return false;
 
         var extension = outputType switch
         {
@@ -183,6 +186,8 @@ public class GhdlService
         };
 
         await File.WriteAllTextAsync(Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension), synth.output);
+
+        return true;
     }
 
     private Task SimulateCurrentFileAsync()
@@ -192,7 +197,7 @@ public class GhdlService
         return Task.CompletedTask;
     }
 
-    public async Task SimulateFileAsync(IProjectFile file)
+    public async Task<bool> SimulateFileAsync(IProjectFile file)
     {
         _dockService.Show<IOutputService>();
         
@@ -221,7 +226,7 @@ public class GhdlService
         if(stopTime != null) simulatingOptions.Add($"--stop-time={stopTime}");
 
         var elaborateResult = await ElaborateAsync(file, settings);
-        if (!elaborateResult) return;
+        if (!elaborateResult) return false;
 
         var openFile = file.TopFolder!.SearchName($"{top}.vcd") as IProjectFile;
         openFile ??= file.TopFolder.AddFile(vcdPath, true);
@@ -240,5 +245,7 @@ public class GhdlService
 
         var run = await ExecuteGhdlAsync(ghdlRunArguments, workingDirectory,
             "Running GHDL Simulation...", AppState.Loading, true);
+
+        return run.success;
     }
 }

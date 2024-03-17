@@ -10,7 +10,7 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
 {
     public string Name => "GHDL Vhdl to Verilog";
     
-    public async Task PerformPreCompileStepAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
+    public async Task<bool> PerformPreCompileStepAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
         try
         {
@@ -22,15 +22,18 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
             foreach (var vhdlFile in project.Files
                          .Where(x => x.Extension is ".vhd" or ".vhdl")
                          .Where(x => !project.CompileExcluded.Contains(x))
-                         .Where(x => !project.TestBenches.Contains(x)))
+                         .Where(x => !project.TestBenches.Contains(x)).ToList())
             {
-                await ghdlService.SynthAsync(vhdlFile, "verilog", buildPath);
+                var success = await ghdlService.SynthAsync(vhdlFile, "verilog", buildPath);
+                if (!success) return false;
             }
             ProjectHelper.ImportEntries(buildPath, buildDir);
+            return true;
         }
         catch (Exception e)
         {
             logger.Error(e.Message, e);
+            return false;
         }
     }
 }
