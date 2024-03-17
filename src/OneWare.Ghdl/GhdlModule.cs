@@ -79,17 +79,19 @@ public class GhdlModule : IModule
                         new MenuItemViewModel("SynthGhdlToVerilog")
                         {
                             Header = "Convert to Verilog Netlist",
-                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "verilog")),
+                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "verilog", file.TopFolder!.FullPath)),
                         },
 
                         new MenuItemViewModel("SynthGhdlToVerilog")
                         {
                             Header = "Convert to Dot Netlist",
-                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "dot")),
+                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "dot", file.TopFolder!.FullPath)),
                         }
                     ]
                 });
             }
         });
+        
+        containerProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
     }
 }

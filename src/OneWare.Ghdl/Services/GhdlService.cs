@@ -111,7 +111,7 @@ public class GhdlService
     private Task SynthCurrentFileAsync(string output)
     {
         if (_dockService.CurrentDocument?.CurrentFile is IProjectFile selectedFile)
-            return SynthAsync(selectedFile, output);
+            return SynthAsync(selectedFile, output, selectedFile.TopFolder!.FullPath);
         return Task.CompletedTask;
     }
 
@@ -153,7 +153,7 @@ public class GhdlService
         return true;
     }
 
-    public async Task SynthAsync(IProjectFile file, string outputType)
+    public async Task SynthAsync(IProjectFile file, string outputType, string outputDirectory)
     {
         _dockService.Show<IOutputService>();
         
@@ -182,9 +182,7 @@ public class GhdlService
             _ => ".file"
         };
 
-        await File.WriteAllTextAsync(
-            Path.Combine(Path.GetDirectoryName(file.FullPath) ?? "",
-                Path.GetFileNameWithoutExtension(file.FullPath) + extension), synth.output);
+        await File.WriteAllTextAsync(Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension), synth.output);
     }
 
     private Task SimulateCurrentFileAsync()
