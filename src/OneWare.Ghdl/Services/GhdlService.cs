@@ -62,7 +62,8 @@ public class GhdlService
     private async Task<(bool success, string output)> ExecuteGhdlAsync(IReadOnlyCollection<string> arguments, string workingDirectory, string status,
         AppState state = AppState.Loading, bool showTimer = false)
     {
-        if (!File.Exists(_path))
+        if (!File.Exists(_path) || (_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries") && 
+                                    _packageService.Packages.GetValueOrDefault(GhdlModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing}))
         {
             var install = await InstallGhdlAsync();
             if (!install) return (false,string.Empty);
@@ -86,13 +87,10 @@ public class GhdlService
         {
             if (!_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries")) return false;
             if(!await _packageService.InstallAsync(GhdlModule.GhdlPackage)) return false;
-        }
-        var result = await _packageService.InstallAsync(GhdlModule.GhdlPackage);
-        if (result)
-        {
             SetEnvironment();
             return true;
         }
+
         return false;
     }
 
