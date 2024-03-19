@@ -11,6 +11,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Properties", "Properties", "{6CD6D5E8-78A9-4F90-9DD7-D27B896431A5}"
 	ProjectSection(SolutionItems) = preProject
 		oneware-extension.json = oneware-extension.json
+		Extension.md = Extension.md
 	EndProjectSection
 EndProject
 Global

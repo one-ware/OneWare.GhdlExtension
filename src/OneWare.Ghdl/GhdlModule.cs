@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using OneWare.Ghdl.Services;
 using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
+using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
 using OneWare.UniversalFpgaProjectSystem.Services;
@@ -14,6 +15,82 @@ namespace OneWare.Ghdl;
 
 public class GhdlModule : IModule
 {
+    public static readonly Package GhdlPackage = new()
+    {
+        Category = "Binaries",
+        Id = "ghdl",
+        Type = "NativeTool",
+        Name = "GHDL",
+        Description = "Open Source VHDL Simulator",
+        License = "GPL 2.0",
+        IconUrl = "https://raw.githubusercontent.com/ghdl/ghdl/master/logo/icon.png",
+        Links = 
+        [
+            new PackageLink()
+            {
+                Name = "GitHub",
+                Url = "https://github.com/ghdl/ghdl"
+            }
+        ],
+        Tabs = 
+        [
+            new PackageTab()
+            {
+                Title = "License",
+                ContentUrl = "https://raw.githubusercontent.com/ghdl/ghdl/master/COPYING.md"
+            }
+        ],
+        Versions =
+        [
+            new PackageVersion()
+            {
+                Version = "4.0.0",
+                Targets =
+                [
+                    new PackageTarget()
+                    {
+                        Target = "win-x64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v4.0.0/ghdl-MINGW32.zip",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "GHDL/bin/ghdl.exe",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "linux-x64",
+                        Url = "https://cdn.vhdplus.com/ghdl/ghdl2.0.0-ubuntu20.zip",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "osx-x64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v4.0.0/ghdl-macos-11-mcode.tgz",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "ghdl/bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    };
+    
     public const string GhdlPathSetting = "GhdlModule_GhdlPath";
 
     public void RegisterTypes(IContainerRegistry containerRegistry)
@@ -23,34 +100,20 @@ public class GhdlModule : IModule
 
     public void OnInitialized(IContainerProvider containerProvider)
     {
-        var nativeToolService = containerProvider.Resolve<INativeToolService>();
-        var nativeTool = nativeToolService.Register("ghdl");
-
-        nativeTool.AddPlatform(PlatformId.WinX64,
-                "https://github.com/ghdl/ghdl/releases/download/v4.0.0/ghdl-MINGW32.zip")
-            .WithShortcut("ghdlExecutable", "GHDL/bin/ghdl.exe", GhdlPathSetting);
-
-        nativeTool.AddPlatform(PlatformId.LinuxX64,
-                "https://cdn.vhdplus.com/ghdl/ghdl2.0.0-ubuntu20.zip")
-            .WithShortcut("ghdlExecutable", "bin/ghdl", GhdlPathSetting);
-
-        nativeTool.AddPlatform(PlatformId.OsxX64,
-                "https://github.com/ghdl/ghdl/releases/download/v3.0.0/ghdl-macos-11-mcode.tgz")
-            .WithShortcut("ghdlExecutable", "ghdl/bin/ghdl", GhdlPathSetting);
-
+        containerProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
+        
         containerProvider.Resolve<ISettingsService>().RegisterTitledPath("Simulator", "GHDL", GhdlPathSetting,
-            "GHDL Path", "Path for GHDL executable",
-            nativeTool.GetShortcutPathOrEmpty("ghdlExecutable"),
+            "GHDL Path", "Path for GHDL executable", "",
             null, containerProvider.Resolve<IPaths>().NativeToolsDirectory, File.Exists);
 
         var ghdlService = containerProvider.Resolve<GhdlService>();
 
-        containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
-            new MenuItemViewModel("SimulateGHDL")
-            {
-                Header = "Simulate project with GHDL",
-                Command = ghdlService.SimulateCommand,
-            });
+        // containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
+        //     new MenuItemViewModel("SimulateGHDL")
+        //     {
+        //         Header = "Simulate project with GHDL",
+        //         Command = ghdlService.SimulateCommand,
+        //     });
 
         // containerProvider.Resolve<IWindowService>()
         //     .RegisterUiExtension("MainWindow_LeftToolBarExtension", new UiExtension(x => new GhdlMainWindowToolBarExtension()

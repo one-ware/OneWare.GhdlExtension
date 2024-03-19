@@ -18,8 +18,8 @@
   ],
   "links": [
     {
-      "name": "GHDL Github",
-      "url": "https://github.com/ghdl/ghdl"
+      "name": "Github",
+      "url": "https://github.com/one-ware/OneWare.GhdlExtension"
     }
   ],
   "versions": [

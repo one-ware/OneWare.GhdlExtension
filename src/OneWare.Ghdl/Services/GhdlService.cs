@@ -1,17 +1,7 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Media;
-using Avalonia.Threading;
-using AvaloniaEdit.Utils;
-using CommunityToolkit.Mvvm.Input;
-using DynamicData;
+﻿using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
 using OneWare.Essentials.Enums;
-using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
-using OneWare.Essentials.NativeTools;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
 using OneWare.Ghdl.ViewModels;
@@ -23,10 +13,11 @@ public class GhdlService
 {
     private readonly ILogger _logger;
     private readonly IDockService _dockService;
-    private readonly INativeToolService _nativeToolService;
+    private readonly IPackageService _packageService;
     private readonly IChildProcessService _childProcessService;
     private readonly IEnvironmentService _environmentService;
     private readonly IOutputService _outputService;
+    private readonly ISettingsService _settingsService;
 
     public AsyncRelayCommand SimulateCommand { get; }
 
@@ -36,19 +27,16 @@ public class GhdlService
 
     private string _path = string.Empty;
 
-    private readonly NativeToolContainer _nativeToolContainer;
-
-    public GhdlService(ILogger logger, IDockService dockService, ISettingsService settingsService,
-        INativeToolService nativeToolService, IChildProcessService childProcessService, IEnvironmentService environmentService,
+    public GhdlService(ILogger logger, IDockService dockService, ISettingsService settingsService, IPackageService packageService, IChildProcessService childProcessService, IEnvironmentService environmentService,
         IOutputService outputService)
     {
         _logger = logger;
         _dockService = dockService;
-        _nativeToolService = nativeToolService;
+        _packageService = packageService;
         _childProcessService = childProcessService;
         _environmentService = environmentService;
         _outputService = outputService;
-        _nativeToolContainer = nativeToolService.Get("ghdl")!;
+        _settingsService = settingsService;
 
         settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
         {
@@ -94,7 +82,12 @@ public class GhdlService
 
     private async Task<bool> InstallGhdlAsync()
     {
-        var result = await _nativeToolService.InstallAsync(_nativeToolContainer);
+        if (_packageService.Packages.GetValueOrDefault(GhdlModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing})
+        {
+            if (!_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries")) return false;
+            if(!await _packageService.InstallAsync(GhdlModule.GhdlPackage)) return false;
+        }
+        var result = await _packageService.InstallAsync(GhdlModule.GhdlPackage);
         if (result)
         {
             SetEnvironment();
