@@ -50,7 +50,7 @@ public class GhdlModule : IModule
                     new PackageTarget()
                     {
                         Target = "win-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/v4.0.0/ghdl-MINGW32.zip",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v4.0.0/ghdl-UCRT64.zip",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
@@ -81,7 +81,7 @@ public class GhdlModule : IModule
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "ghdl/bin/ghdl",
+                                RelativePath = "bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
