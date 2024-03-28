@@ -227,8 +227,8 @@ public class GhdlService
         var elaborateResult = await ElaborateAsync(file, settings);
         if (!elaborateResult) return false;
 
-        var openFile = file.TopFolder!.SearchName($"{top}.vcd") as IProjectFile;
-        openFile ??= file.TopFolder.AddFile(vcdPath, true);
+        var openFile = file.Root.SearchRelativePath(vcdPath) as IProjectFile;
+        openFile ??= file.Root.AddFile(vcdPath, true);
 
         var doc = await _dockService.OpenFileAsync(openFile);
         if (doc is IStreamableDocument vcd)
