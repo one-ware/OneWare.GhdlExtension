@@ -23,8 +23,7 @@ public class GhdlSimulatorToolbarViewModel(TestBenchContext context, IFpgaSimula
         get => context.GetBenchProperty(nameof(VhdlStandard)) ?? "93c";
         set
         {
-            if(value == "93c") context.RemoveBenchProperty(nameof(VhdlStandard));
-            else context.SetBenchProperty(nameof(VhdlStandard), value);
+            context.SetBenchProperty(nameof(VhdlStandard), value);
             OnPropertyChanged();
         }
     }
