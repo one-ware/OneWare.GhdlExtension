@@ -117,8 +117,16 @@ public class GhdlService
 
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
         var workingDirectory = file.Root!.FullPath;
-        List<string> ghdlOptions = ["--std=02"];
-
+        
+            
+        List<string> ghdlOptions = [];
+        
+        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
+    
+        var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
+        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
+        
         List<string> ghdlInitArguments = ["-i"];
         ghdlInitArguments.AddRange(ghdlOptions);
         ghdlInitArguments.AddRange(vhdlFiles);
