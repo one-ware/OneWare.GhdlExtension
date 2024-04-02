@@ -66,7 +66,11 @@ public class GhdlService
                                     _packageService.Packages.GetValueOrDefault(GhdlModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing}))
         {
             var install = await InstallGhdlAsync();
-            if (!install) return (false,string.Empty);
+            if (!install)
+            {
+                _logger.Warning("GHDL not found. Please set the path in the settings or (re)install it from the package manager.");
+                return (false,string.Empty);
+            }
         }
         return await _childProcessService.ExecuteShellAsync("ghdl", arguments, workingDirectory,
             status, state, showTimer, x =>
