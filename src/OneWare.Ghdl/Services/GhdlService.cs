@@ -82,6 +82,10 @@ public class GhdlService
                 }
                 _outputService.WriteLine(x);
                 return true;
+            }, err =>
+            {
+                _logger.Error(err);
+                return false;
             });
     }
 
