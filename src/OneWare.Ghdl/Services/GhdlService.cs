@@ -72,6 +72,7 @@ public class GhdlService
                 return (false,string.Empty);
             }
         }
+
         return await _childProcessService.ExecuteShellAsync("ghdl", arguments, workingDirectory,
             status, state, showTimer, x =>
             {
@@ -80,12 +81,9 @@ public class GhdlService
                     _logger.Error(x);
                     return false;
                 }
+
                 _outputService.WriteLine(x);
                 return true;
-            }, err =>
-            {
-                _logger.Error(err);
-                return false;
             });
     }
 
