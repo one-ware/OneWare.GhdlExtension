@@ -247,18 +247,20 @@ public class GhdlService
         var elaborateResult = await ElaborateAsync(file, settings);
         if (!elaborateResult) return false;
 
+        var waveFormFile = file.Root.SearchRelativePath(waveFilePath) as IFile;
+
+        if (waveFormFile == null)
+        {
+            waveFormFile = _projectExplorerService.GetTemporaryFile(Path.Combine(file.Root.RootFolderPath, waveFilePath));
+        }
+        
+        //Open VCD inside IDE and prepare to stream
         if (waveOutput == "VCD")
         {
-            var openFile = file.Root.SearchRelativePath(waveFilePath) as IFile;
-
-            if (openFile == null)
-            {
-                openFile = _projectExplorerService.GetTemporaryFile(Path.Combine(file.Root.RootFolderPath, waveFilePath));
-            }
-            
-            if (!File.Exists(openFile.FullPath)) await File.Create(openFile.FullPath).DisposeAsync();
+            if (!File.Exists(waveFormFile.FullPath)) await File.Create(waveFormFile.FullPath).DisposeAsync();
                 
-            var doc = await _dockService.OpenFileAsync(openFile);
+            var doc = await _dockService.OpenFileAsync(waveFormFile);
+            
             // ReSharper disable once SuspiciousTypeConversion.Global
             if (doc is IStreamableDocument vcd)
             {
@@ -274,6 +276,11 @@ public class GhdlService
         
         var run = await ExecuteGhdlAsync(ghdlRunArguments, workingDirectory,
             "Running GHDL Simulation...", AppState.Loading, true);
+
+        if (run.success && waveOutput is "GHW" or "FST")
+        {
+            _ = await _dockService.OpenFileAsync(waveFormFile);
+        }
 
         return run.success;
     }
