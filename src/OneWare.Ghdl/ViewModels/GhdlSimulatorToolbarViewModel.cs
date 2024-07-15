@@ -28,6 +28,17 @@ public class GhdlSimulatorToolbarViewModel(TestBenchContext context, IFpgaSimula
         }
     }
     
+    public string[] AvailableWaveOutputFormats => ["VCD", "GHW", "FST"];
+    public string WaveOutputFormat
+    {
+        get => context.GetBenchProperty(nameof(WaveOutputFormat)) ?? "VCD";
+        set
+        {
+            context.SetBenchProperty(nameof(WaveOutputFormat), value);
+            OnPropertyChanged();
+        }
+    }
+    
     public string[] AvailableAssertLevels => ["default", "warning", "error", "failure", "none"];
     public string AssertLevel
     {

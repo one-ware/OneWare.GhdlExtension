@@ -18,6 +18,7 @@ public class GhdlService
     private readonly IEnvironmentService _environmentService;
     private readonly IOutputService _outputService;
     private readonly ISettingsService _settingsService;
+    private readonly IProjectExplorerService _projectExplorerService;
 
     public AsyncRelayCommand SimulateCommand { get; }
 
@@ -28,7 +29,7 @@ public class GhdlService
     private string _path = string.Empty;
 
     public GhdlService(ILogger logger, IDockService dockService, ISettingsService settingsService, IPackageService packageService, IChildProcessService childProcessService, IEnvironmentService environmentService,
-        IOutputService outputService)
+        IOutputService outputService, IProjectExplorerService projectExplorerService)
     {
         _logger = logger;
         _dockService = dockService;
@@ -37,6 +38,7 @@ public class GhdlService
         _environmentService = environmentService;
         _outputService = outputService;
         _settingsService = settingsService;
+        _projectExplorerService = projectExplorerService;
 
         settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
         {
@@ -211,9 +213,21 @@ public class GhdlService
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
         var workingDirectory = file.Root!.FullPath;
         List<string> ghdlOptions = [];
-        var vcdPath = Path.Combine(file.TopFolder!.RelativePath,$"{top}.vcd");
-        var waveFormFileArgument = $"--vcd={vcdPath}";
+        
         List<string> simulatingOptions = [];
+        
+        var waveOutput = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.WaveOutputFormat)) ?? "VCD";
+
+        var waveOutputArgument = waveOutput switch
+        {
+            "VCD" => "vcd",
+            "GHW" => "wave",
+            "FST" => "fst",
+            _ => string.Empty
+        };
+        
+        var waveFilePath = Path.Combine(file.TopFolder!.RelativePath,$"{top}.{waveOutput.ToLower()}");
+        var waveFormFileArgument = $"--{waveOutputArgument}={waveFilePath}";
         
         var additionalGhdlOptions = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
         if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
@@ -233,21 +247,31 @@ public class GhdlService
         var elaborateResult = await ElaborateAsync(file, settings);
         if (!elaborateResult) return false;
 
-        var openFile = file.Root.SearchRelativePath(vcdPath) as IProjectFile;
-        openFile ??= file.Root.AddFile(vcdPath, true);
-
-        var doc = await _dockService.OpenFileAsync(openFile);
-        if (doc is IStreamableDocument vcd)
+        if (waveOutput == "VCD")
         {
-            vcd.PrepareLiveStream();
-        }
+            var openFile = file.Root.SearchRelativePath(waveFilePath) as IFile;
+
+            if (openFile == null)
+            {
+                openFile = _projectExplorerService.GetTemporaryFile(Path.Combine(file.Root.RootFolderPath, waveFilePath));
+            }
+            
+            if (!File.Exists(openFile.FullPath)) await File.Create(openFile.FullPath).DisposeAsync();
+                
+            var doc = await _dockService.OpenFileAsync(openFile);
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            if (doc is IStreamableDocument vcd)
+            {
+                vcd.PrepareLiveStream();
+            }
+        } 
 
         List<string> ghdlRunArguments = ["-r"];
         ghdlRunArguments.AddRange(ghdlOptions);
         ghdlRunArguments.Add(top);
         ghdlRunArguments.Add(waveFormFileArgument);
         ghdlRunArguments.AddRange(simulatingOptions);
-
+        
         var run = await ExecuteGhdlAsync(ghdlRunArguments, workingDirectory,
             "Running GHDL Simulation...", AppState.Loading, true);
 

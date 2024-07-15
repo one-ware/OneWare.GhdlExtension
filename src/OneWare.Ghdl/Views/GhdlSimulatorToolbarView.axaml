@@ -37,6 +37,13 @@
                        ToolTip.Tip="Sets the time when the simulation is forced to stop" />
             <TextBox Watermark="10ms" Classes="ToolBar" Width="100" Text="{Binding SimulationStopTime}" />
             <Border Classes="SplitterBorder" />
+            <TextBlock VerticalAlignment="Center" Text="Format"
+                       ToolTip.Tip="Select the output format to use. VCD can be opened inside the IDE, while GHW and FST require GTKWave." />
+            <Border Classes="RoundToolBar">
+                <ComboBox Width="100" ItemsSource="{Binding AvailableWaveOutputFormats}" SelectedIndex="0"
+                          SelectedItem="{Binding WaveOutputFormat, Mode=TwoWay}" />
+            </Border>
+            <Border Classes="SplitterBorder" />
             <TextBlock VerticalAlignment="Center" Text="Assert Level"
                        ToolTip.Tip="Select the assertion level at which an assertion violation stops the simulation" />
             <Border Classes="RoundToolBar">
