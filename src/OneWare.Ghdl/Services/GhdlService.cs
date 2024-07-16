@@ -75,7 +75,7 @@ public class GhdlService
             }
         }
 
-        return await _childProcessService.ExecuteShellAsync("ghdl", arguments, workingDirectory,
+        return await _childProcessService.ExecuteShellAsync(_path, arguments, workingDirectory,
             status, state, showTimer, x =>
             {
                 if (x.StartsWith("ghdl:error:"))
