@@ -253,6 +253,27 @@
           "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.6/OneWare_GhdlExtension_0.9.6_osx-arm64.zip"
         }
       ]
+    },
+    {
+      "version": "0.9.7",
+      "targets": [
+        {
+          "target": "win-x64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.7/OneWare_GhdlExtension_0.9.7_win-x64.zip"
+        },
+        {
+          "target": "linux-x64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.7/OneWare_GhdlExtension_0.9.7_linux-x64.zip"
+        },
+        {
+          "target": "osx-x64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.7/OneWare_GhdlExtension_0.9.7_osx-x64.zip"
+        },
+        {
+          "target": "osx-arm64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.7/OneWare_GhdlExtension_0.9.7_osx-arm64.zip"
+        }
+      ]
     }
   ]
 }
