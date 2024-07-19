@@ -6,6 +6,7 @@ using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
 using OneWare.Ghdl.ViewModels;
 using OneWare.UniversalFpgaProjectSystem.Context;
+using OneWare.UniversalFpgaProjectSystem.Models;
 
 namespace OneWare.Ghdl.Services;
 
@@ -107,6 +108,7 @@ public class GhdlService
         if (File.Exists(_path))
         {
             _environmentService.SetPath("GHDL_PATH", Path.GetDirectoryName(_path));
+            _environmentService.SetEnvironmentVariable("GHDL_PREFIX", Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_path))!, "lib", $"ghdl"));
         }
     }
 
@@ -119,13 +121,15 @@ public class GhdlService
 
     private async Task<bool> ElaborateAsync(IProjectFile file, TestBenchContext context)
     {
-        var vhdlFiles = file.Root.Files
+        if(file.Root is not UniversalFpgaProjectRoot root) return false;
+        
+        var vhdlFiles = root.Files
+            .Where(x => !root.CompileExcluded.Contains(x))
             .Where(x => x.Extension is ".vhd" or ".vhdl")
             .Select(x => x.RelativePath);
 
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
         var workingDirectory = file.Root!.FullPath;
-        
             
         List<string> ghdlOptions = [];
         
