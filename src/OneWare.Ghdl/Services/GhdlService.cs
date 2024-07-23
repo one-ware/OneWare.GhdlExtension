@@ -251,9 +251,7 @@ public class GhdlService
         var elaborateResult = await ElaborateAsync(file, settings);
         if (!elaborateResult) return false;
 
-        var waveFormFile = file.Root.SearchRelativePath(waveFilePath) as IFile;
-
-        if (waveFormFile == null)
+        if (file.Root.SearchRelativePath(waveFilePath) is not IFile waveFormFile)
         {
             waveFormFile = _projectExplorerService.GetTemporaryFile(Path.Combine(file.Root.RootFolderPath, waveFilePath));
         }
