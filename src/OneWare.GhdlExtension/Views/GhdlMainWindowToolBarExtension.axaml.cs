@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
 
-namespace OneWare.Ghdl.Views;
+namespace OneWare.GhdlExtension.Views;
 
 public partial class GhdlMainWindowToolBarExtension : UserControl
 {

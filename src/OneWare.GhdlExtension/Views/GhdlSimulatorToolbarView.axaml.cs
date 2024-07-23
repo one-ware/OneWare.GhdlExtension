@@ -2,7 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace OneWare.Ghdl.Views;
+namespace OneWare.GhdlExtension.Views;
 
 public partial class GhdlSimulatorToolbarView : UserControl
 {

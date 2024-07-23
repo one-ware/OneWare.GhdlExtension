@@ -1,19 +1,19 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Input;
-using OneWare.Ghdl.Services;
 using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
+using OneWare.GhdlExtension.Services;
 using OneWare.UniversalFpgaProjectSystem.Services;
 using Prism.Ioc;
 using Prism.Modularity;
 
-namespace OneWare.Ghdl;
+namespace OneWare.GhdlExtension;
 
-public class GhdlModule : IModule
+public class GhdlExtensionModule : IModule
 {
     public static readonly Package GhdlPackage = new()
     {

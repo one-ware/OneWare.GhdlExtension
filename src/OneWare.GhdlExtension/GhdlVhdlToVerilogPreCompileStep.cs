@@ -1,10 +1,10 @@
 ﻿using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Services;
-using OneWare.Ghdl.Services;
+using OneWare.GhdlExtension.Services;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
 
-namespace OneWare.Ghdl;
+namespace OneWare.GhdlExtension;
 
 public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger logger) : IFpgaPreCompileStep
 {

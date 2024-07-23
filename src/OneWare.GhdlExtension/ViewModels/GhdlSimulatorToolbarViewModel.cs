@@ -2,7 +2,7 @@
 using OneWare.UniversalFpgaProjectSystem.Context;
 using OneWare.UniversalFpgaProjectSystem.Services;
 
-namespace OneWare.Ghdl.ViewModels;
+namespace OneWare.GhdlExtension.ViewModels;
 
 public class GhdlSimulatorToolbarViewModel(TestBenchContext context, IFpgaSimulator simulator) : ObservableObject
 {

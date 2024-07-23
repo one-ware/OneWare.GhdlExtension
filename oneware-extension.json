@@ -2,7 +2,7 @@
   "category": "Simulators",
   "type": "Plugin",
   "name": "GHDL Extension",
-  "id": "GhdlModule",
+  "id": "OneWare.GhdlExtension",
   "description": "GHDL Integration for OneWare",
   "license": "MIT",
   "iconUrl": "https://ghdl.github.io/ghdl/_static/logo.png",
@@ -280,7 +280,7 @@
       "targets": [
         {
           "target": "all",
-          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.8/OneWare_GhdlExtension_0.9.8_all.zip"
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.8/OneWare.GhdlExtension_0.9.8_all.zip"
         }
       ]
     }

@@ -1,11 +1,11 @@
 ﻿using OneWare.Essentials.Models;
-using OneWare.Ghdl.Services;
-using OneWare.Ghdl.ViewModels;
-using OneWare.Ghdl.Views;
+using OneWare.GhdlExtension.Services;
+using OneWare.GhdlExtension.ViewModels;
+using OneWare.GhdlExtension.Views;
 using OneWare.UniversalFpgaProjectSystem.Context;
 using OneWare.UniversalFpgaProjectSystem.Services;
 
-namespace OneWare.Ghdl;
+namespace OneWare.GhdlExtension;
 
 public class GhdlSimulator : IFpgaSimulator
 {

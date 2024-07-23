@@ -25,17 +25,17 @@ jobs:
         with:
           proj-path: src/OneWare.Ghdl/OneWare.Ghdl.csproj
       - name: Build
-        run: dotnet build src/OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -o publish
+        run: dotnet build src/OneWare.GhdlExtension/OneWare.GhdlExtension.csproj -c Release -o publish
       - name: Compress
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
-          filename: ../OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_all.zip
+          filename: ../OneWare.GhdlExtension_${{steps.get-version.outputs.version}}_all.zip
           directory: ./publish
       - name: Debug
         run: ls
       - uses: ncipollo/release-action@v1.14.0
         with:
-          artifacts: "OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_all.zip"
+          artifacts: "OneWare.GhdlExtension_${{steps.get-version.outputs.version}}_all.zip"
           tag: ${{steps.get-version.outputs.version}}
           allowUpdates: true

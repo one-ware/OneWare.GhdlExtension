@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneWare.Ghdl", "src\OneWare.Ghdl\OneWare.Ghdl.csproj", "{BA2D8280-AD1A-42E6-8D31-3111FB92173C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneWare.GhdlExtension", "src\OneWare.GhdlExtension\OneWare.GhdlExtension.csproj", "{BA2D8280-AD1A-42E6-8D31-3111FB92173C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Actions", "Actions", "{D55CBF2C-7D56-4D64-A673-68EFE9FFCE37}"
 	ProjectSection(SolutionItems) = preProject

@@ -4,11 +4,11 @@ using OneWare.Essentials.Enums;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
-using OneWare.Ghdl.ViewModels;
+using OneWare.GhdlExtension.ViewModels;
 using OneWare.UniversalFpgaProjectSystem.Context;
 using OneWare.UniversalFpgaProjectSystem.Models;
 
-namespace OneWare.Ghdl.Services;
+namespace OneWare.GhdlExtension.Services;
 
 public class GhdlService
 {
@@ -41,7 +41,7 @@ public class GhdlService
         _settingsService = settingsService;
         _projectExplorerService = projectExplorerService;
 
-        settingsService.GetSettingObservable<string>(GhdlModule.GhdlPathSetting).Subscribe(x =>
+        settingsService.GetSettingObservable<string>(GhdlExtensionModule.GhdlPathSetting).Subscribe(x =>
         {
             _path = x;
             SetEnvironment();
@@ -66,7 +66,7 @@ public class GhdlService
         AppState state = AppState.Loading, bool showTimer = false)
     {
         if (!File.Exists(_path) || (_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries") && 
-                                    _packageService.Packages.GetValueOrDefault(GhdlModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing}))
+                                    _packageService.Packages.GetValueOrDefault(GhdlExtensionModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing}))
         {
             var install = await InstallGhdlAsync();
             if (!install)
@@ -92,10 +92,10 @@ public class GhdlService
 
     private async Task<bool> InstallGhdlAsync()
     {
-        if (_packageService.Packages.GetValueOrDefault(GhdlModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing})
+        if (_packageService.Packages.GetValueOrDefault(GhdlExtensionModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing})
         {
             if (!_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries")) return false;
-            if(!await _packageService.InstallAsync(GhdlModule.GhdlPackage)) return false;
+            if(!await _packageService.InstallAsync(GhdlExtensionModule.GhdlPackage)) return false;
             SetEnvironment();
             return true;
         }
