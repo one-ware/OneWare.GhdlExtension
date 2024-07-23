@@ -23,7 +23,7 @@ jobs:
         uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
         id: get-version
         with:
-          proj-path: src/OneWare.Ghdl/OneWare.Ghdl.csproj
+          proj-path: src/OneWare.GhdlExtension/OneWare.GhdlExtension.csproj
       - name: Build
         run: dotnet build src/OneWare.GhdlExtension/OneWare.GhdlExtension.csproj -c Release -o publish
       - name: Compress
