@@ -1,68 +1,41 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
 name: Publish
 
 on:
-  workflow_dispatch: # Allow running the workflow manually from the GitHub UI
+  workflow_dispatch:
   release:
     types:
-      - published    # Run the workflow when a new GitHub release is published
+      - published
 
 jobs:
   build:
-    strategy:
-      matrix:
-        target: ["win-x64", "linux-x64", "osx-x64", "osx-arm64"]
-        
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 7.0.x
-    - name: Get Version
-      uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
-      id: get-version
-      with:
-        proj-path: src/OneWare.Ghdl/OneWare.Ghdl.csproj
-    - name: Build ${{ matrix.target }}
-      run: dotnet build src/OneWare.Ghdl/OneWare.Ghdl.csproj -c Release -r ${{ matrix.target }} -o publish
-    - name: Compress ${{ matrix.target }}
-      uses: thedoctor0/zip-release@0.7.1
-      with:
-        type: 'zip'
-        filename: ../OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_${{ matrix.target }}.zip
-        directory: ./publish
-    - uses: actions/upload-artifact@v3
-      with:
-        name: OneWare_GhdlExtension_${{ matrix.target }}
-        if-no-files-found: error
-        retention-days: 5
-        path: ./OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_${{ matrix.target }}.zip
-        
-  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: [ build ]
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
       - name: Get Version
         uses: kzrnm/get-net-sdk-project-versions-action@v1.3.0
         id: get-version
         with:
-          proj-path: src/OneWare.Ghdl/OneWare.Ghdl.csproj
-      - uses: actions/download-artifact@v3
+          proj-path: src/OneWare.GhdlExtension/OneWare.GhdlExtension.csproj
+      - name: Build
+        run: dotnet build src/OneWare.GhdlExtension/OneWare.GhdlExtension.csproj -c Release -o publish
+      - name: Compress
+        uses: thedoctor0/zip-release@0.7.1
         with:
-          path: ./artifacts
-      - uses: ncipollo/release-action@v1
+          type: 'zip'
+          filename: ../OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_all.zip
+          directory: ./publish
+      - name: Debug
+        run: ls
+      - uses: ncipollo/release-action@v1.14.0
         with:
-          artifacts: "artifacts/**/*.zip"
+          artifacts: "OneWare_GhdlExtension_${{steps.get-version.outputs.version}}_all.zip"
           tag: ${{steps.get-version.outputs.version}}
           allowUpdates: true
-          

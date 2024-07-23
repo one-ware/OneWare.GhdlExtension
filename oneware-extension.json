@@ -274,6 +274,15 @@
           "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.7/OneWare_GhdlExtension_0.9.7_osx-arm64.zip"
         }
       ]
+    },
+    {
+      "version": "0.9.8",
+      "targets": [
+        {
+          "target": "win-x64",
+          "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.8/OneWare_GhdlExtension_0.9.8_all.zip"
+        }
+      ]
     }
   ]
 }
