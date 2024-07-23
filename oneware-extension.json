@@ -279,7 +279,7 @@
       "version": "0.9.8",
       "targets": [
         {
-          "target": "win-x64",
+          "target": "all",
           "url": "https://github.com/ProtopSolutions/OneWare.GhdlExtension/releases/download/0.9.8/OneWare_GhdlExtension_0.9.8_all.zip"
         }
       ]
