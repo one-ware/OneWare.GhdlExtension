@@ -40,6 +40,15 @@
           "url": "https://github.com/one-ware/OneWare.GhdlExtension/releases/download/0.10.0/OneWare.GhdlExtension_0.10.0_all.zip"
         }
       ]
+    },
+    {
+      "version": "0.10.1",
+      "targets": [
+        {
+          "target": "all",
+          "url": "https://github.com/one-ware/OneWare.GhdlExtension/releases/download/0.10.1/OneWare.GhdlExtension_0.10.1_all.zip"
+        }
+      ]
     }
   ]
 }
