@@ -21,7 +21,7 @@
         </ItemGroup>
 
         <WriteLinesToFile
-                File="$(OutDir)deps.txt"
+                File="$(OutDir)minimal-dependencies.txt"
                 Lines="@(FilteredDependencies->'%(Identity) : %(Version)')"
                 Overwrite="true" />
     </Target>
