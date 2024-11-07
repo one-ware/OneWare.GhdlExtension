@@ -14,5 +14,16 @@
         <PackageReference Include="OneWare.Essentials" Version="0.10.1" Private="false" ExcludeAssets="runtime;Native" />
         <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.40.0" Private="false" ExcludeAssets="runtime;Native" />
     </ItemGroup>
+
+    <Target Name="GenerateMinimalDeps" AfterTargets="Build">
+        <ItemGroup>
+            <FilteredDependencies Include="@(PackageReference)" Condition="'%(Private)' == 'false'" />
+        </ItemGroup>
+
+        <WriteLinesToFile
+                File="$(OutputPath)deps.txt"
+                Lines="@(FilteredDependencies->'%(Identity) : %(Version)')"
+                Overwrite="true" />
+    </Target>
     
 </Project>
