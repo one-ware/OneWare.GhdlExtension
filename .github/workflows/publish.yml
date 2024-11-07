@@ -36,6 +36,6 @@ jobs:
         run: ls
       - uses: ncipollo/release-action@v1.14.0
         with:
-          artifacts: "OneWare.GhdlExtension_${{steps.get-version.outputs.version}}_all.zip,./publish/OneWare.GhdlExtension.deps.json"
+          artifacts: "OneWare.GhdlExtension_${{steps.get-version.outputs.version}}_all.zip,./publish/deps.txt"
           tag: ${{steps.get-version.outputs.version}}
           allowUpdates: true
