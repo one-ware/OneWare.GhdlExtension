@@ -25,6 +25,14 @@
   "sourceUrl": "https://github.com/one-ware/OneWare.GhdlExtension/releases/download",
   "versions": [
     {
+      "version": "0.10.1",
+      "targets": [
+        {
+          "target": "all"
+        }
+      ]
+    },
+    {
       "version": "0.10.2",
       "targets": [
         {
