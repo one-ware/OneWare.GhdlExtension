@@ -11,8 +11,8 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="OneWare.Essentials" Version="0.10.1" Private="false" ExcludeAssets="runtime;Native" />
-        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.40.0" Private="false" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.Essentials" Version="0.11.0" Private="false" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.41.0" Private="false" ExcludeAssets="runtime;Native" />
     </ItemGroup>
 
     <Target Name="GenerateCompatibilityFile" AfterTargets="Build">
