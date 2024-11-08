@@ -15,7 +15,7 @@
         <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.40.0" Private="false" ExcludeAssets="runtime;Native" />
     </ItemGroup>
 
-    <Target Name="GenerateMinimalDeps" AfterTargets="Build">
+    <Target Name="GenerateCompatibilityFile" AfterTargets="Build">
         <ItemGroup>
             <FilteredDependencies Include="@(PackageReference)" Condition="'%(Private)' == 'false'" />
         </ItemGroup>
