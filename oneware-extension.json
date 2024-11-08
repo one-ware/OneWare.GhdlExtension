@@ -22,7 +22,7 @@
       "url": "https://github.com/one-ware/OneWare.GhdlExtension"
     }
   ],
-  "url": "https://github.com/one-ware/OneWare.GhdlExtension/releases/download",
+  "sourceUrl": "https://github.com/one-ware/OneWare.GhdlExtension/releases/download",
   "versions": [
     {
       "version": "0.10.2",
