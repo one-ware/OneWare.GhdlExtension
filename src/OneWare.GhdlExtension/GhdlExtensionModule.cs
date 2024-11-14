@@ -102,7 +102,7 @@ public class GhdlExtensionModule : IModule
     {
         containerProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
         
-        containerProvider.Resolve<ISettingsService>().RegisterTitledPath("Simulator", "GHDL", GhdlPathSetting,
+        containerProvider.Resolve<ISettingsService>().RegisterTitledFilePath("Simulator", "GHDL", GhdlPathSetting,
             "GHDL Path", "Path for GHDL executable", "",
             null, containerProvider.Resolve<IPaths>().NativeToolsDirectory, File.Exists);
 
