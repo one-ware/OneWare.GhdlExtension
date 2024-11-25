@@ -87,6 +87,16 @@ public class GhdlService
 
                 _outputService.WriteLine(x);
                 return true;
+            }, x =>
+            {
+                if (x.StartsWith("ghdl:error:"))
+                {
+                    _logger.Error(x);
+                    return false;
+                }
+                
+                _logger.Warning(x);
+                return true;
             });
     }
 
