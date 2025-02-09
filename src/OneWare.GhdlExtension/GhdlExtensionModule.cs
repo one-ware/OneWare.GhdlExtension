@@ -133,6 +133,52 @@ public class GhdlExtensionModule : IModule
                         ]
                     }
                 ]
+            },
+            new PackageVersion()
+            {
+                Version = "5.0.0-dev",
+                Targets =
+                [
+                    new PackageTarget()
+                    {
+                        Target = "win-x64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/nightly/ghdl-mcode-5.0.0-dev-ucrt64.zip",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "GHDL/bin/ghdl.exe",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "linux-x64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/nightly/ghdl-mcode-5.0.0-dev-ubuntu24.04-x86_64.tar.gz",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "osx-x64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/nightly/ghdl-mcode-5.0.0-dev-macos13-x86_64.tar.gz",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    }
+                ]
             }
         ]
     };
