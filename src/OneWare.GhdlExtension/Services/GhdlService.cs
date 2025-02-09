@@ -185,7 +185,9 @@ public class GhdlService
 
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
         var workingDirectory = file.Root!.FullPath;
-        List<string> ghdlOptions = ["--std=02"];
+
+        var vhdlStandard = (file.Root as UniversalFpgaProjectRoot)?.GetProjectProperty("VHDL_Standard") ?? "02";
+        List<string> ghdlOptions = [$"--std={vhdlStandard}"];
 
         var elaborateResult = await ElaborateAsync(file, settings);
         if (!elaborateResult) return false;
