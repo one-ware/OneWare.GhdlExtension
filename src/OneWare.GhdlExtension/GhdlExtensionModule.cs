@@ -136,7 +136,7 @@ public class GhdlExtensionModule : IModule
             },
             new PackageVersion()
             {
-                Version = "5.0.0-dev",
+                Version = "5.0.0",
                 Targets =
                 [
                     new PackageTarget()
