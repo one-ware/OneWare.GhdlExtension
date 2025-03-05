@@ -136,18 +136,18 @@ public class GhdlExtensionModule : IModule
             },
             new PackageVersion()
             {
-                Version = "5.0.0",
+                Version = "5.0.1",
                 Targets =
                 [
                     new PackageTarget()
                     {
                         Target = "win-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/nightly/ghdl-mcode-5.0.0-dev-ucrt64.zip",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-mcode-5.0.1-ucrt64.zip",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "GHDL/bin/ghdl.exe",
+                                RelativePath = "bin/ghdl.exe",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
@@ -155,7 +155,7 @@ public class GhdlExtensionModule : IModule
                     new PackageTarget()
                     {
                         Target = "linux-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/nightly/ghdl-mcode-5.0.0-dev-ubuntu24.04-x86_64.tar.gz",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-mcode-5.0.1-ubuntu24.04-x86_64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
@@ -168,7 +168,7 @@ public class GhdlExtensionModule : IModule
                     new PackageTarget()
                     {
                         Target = "osx-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/nightly/ghdl-mcode-5.0.0-dev-macos13-x86_64.tar.gz",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-mcode-5.0.1-macos13-x86_64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
