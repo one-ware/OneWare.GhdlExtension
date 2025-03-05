@@ -147,7 +147,7 @@ public class GhdlExtensionModule : IModule
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "GHDL/bin/ghdl.exe",
+                                RelativePath = "bin/ghdl.exe",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
