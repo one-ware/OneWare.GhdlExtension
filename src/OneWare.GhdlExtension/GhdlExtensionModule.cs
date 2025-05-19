@@ -1,4 +1,5 @@
-﻿using Avalonia;
+﻿using System.Collections.ObjectModel;
+using Avalonia;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Input;
 using OneWare.Essentials.Helpers;
@@ -7,6 +8,7 @@ using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
 using OneWare.GhdlExtension.Services;
+using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
 using Prism.Ioc;
 using Prism.Modularity;
@@ -247,6 +249,52 @@ public class GhdlExtensionModule : IModule
             }
         });
         
+        containerProvider.Resolve<IProjectSettingsService>().AddProjectSetting("GHDL_Libraries", new ListBoxSetting("GHDL libraries", []), 
+            file =>
+            {
+                if (file is UniversalFpgaProjectRoot root)
+                {
+                    return root.Files.Exists(projectFile => projectFile.Extension == ".vhd" || projectFile.Extension == ".vhdl");
+                }
+                else
+                {
+                    return false;
+                }
+            });
+        
+        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
+        {
+            if (list[0] is IProjectFile {Extension: ".vhd" or ".vhdl" } file && file.Root is UniversalFpgaProjectRoot root)
+            {
+                ObservableCollection<MenuItemViewModel>? items = new ObservableCollection<MenuItemViewModel>();
+
+                if (root.GetProjectPropertyArray("GHDL_Libraries") is null)
+                {
+                    return;
+                }
+                
+                foreach (string lib in root.GetProjectPropertyArray("GHDL_Libraries"))
+                {
+                    items.Add(new MenuItemViewModel($"GHDL_Library_{lib}")
+                    {
+                        Header = lib,
+                        Command = new AsyncRelayCommand(() => AddFileToLibraryAsync(lib, file))
+                    });
+                }
+                
+                models.Add(new MenuItemViewModel("GHDL_Library_Add")
+                {
+                    Header = "Add to library",
+                    Items = items
+                });
+            }
+        }));
+        
         containerProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
+    }
+
+    private async Task AddFileToLibraryAsync(string library, IProjectFile file)
+    {
+        
     }
 }
