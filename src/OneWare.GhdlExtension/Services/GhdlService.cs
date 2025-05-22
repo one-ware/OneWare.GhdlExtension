@@ -214,6 +214,68 @@ public class GhdlService
         return initFiles.success;
     }
 
+    private async Task<bool> MakeLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname,
+        string workingDirectory)
+    {
+        string? top = Path.GetFileNameWithoutExtension(root.TopEntity?.FullPath);
+
+        if (top is null)
+        {
+            _logger.Error("No toplevel entity has been set");
+            
+            return false;
+        }
+        
+        List<string> ghdlOptions = [];
+        
+        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
+    
+        var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
+        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
+        
+        ghdlOptions.Add($"--work={libname}");
+        
+        List<string> ghdlMakeArguments = ["-m"];
+        ghdlMakeArguments.AddRange(ghdlOptions);
+        ghdlMakeArguments.Add(top);
+        
+        var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
+            $"Running GHDL Make for library {libname}...", AppState.Loading, true);
+        return make.success;
+    }
+
+    private IEnumerable<string> GetAllLibraryFiles(UniversalFpgaProjectRoot root)
+    {
+        IEnumerable<string>? libnames = root.GetProjectPropertyArray("GHDL_Libraries");
+
+        if (libnames is null || !libnames.Any())
+        {
+            return [];
+        }
+
+        var ret = new List<string>();
+        
+        foreach (string lib in libnames)
+        {
+            IEnumerable<string>? libfiles = root.GetProjectPropertyArray($"GHDL-LIB_{lib}");
+
+            if (libfiles is null || !libfiles.Any())
+            {
+                _logger.Warning($"Library {lib} is empty");
+                
+                continue;
+            }
+            
+            foreach (string file in libfiles)
+            {
+                ret.Add(file);
+            }
+        }
+        
+        return ret;
+    }
+
     public async Task<bool> SynthAsync(IProjectFile file, string outputType, string outputDirectory)
     {
         _dockService.Show<IOutputService>();
