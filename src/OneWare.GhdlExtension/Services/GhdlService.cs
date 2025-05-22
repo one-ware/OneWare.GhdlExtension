@@ -132,9 +132,14 @@ public class GhdlService
     private async Task<bool> ElaborateAsync(IProjectFile file, TestBenchContext context)
     {
         if(file.Root is not UniversalFpgaProjectRoot root) return false;
+
+        IEnumerable<string> libfiles = GetAllLibraryFiles(root);
+
+        IEnumerable<string>? libnames = root.GetProjectPropertyArray("GHDL_Libraries");
         
         var vhdlFiles = root.Files
             .Where(x => !root.CompileExcluded.Contains(x))
+            .Where(x => !libfiles.Contains(x.RelativePath))
             .Where(x => x.Extension is ".vhd" or ".vhdl")
             .Select(x => x.RelativePath);
 
@@ -153,9 +158,35 @@ public class GhdlService
         ghdlInitArguments.AddRange(ghdlOptions);
         ghdlInitArguments.AddRange(vhdlFiles);
 
+        if (libnames is not null)
+        {
+            foreach (string libname in libnames)
+            {
+                bool success = await ImportLibraryAsync(root, context, libname, workingDirectory);
+                
+                if (!success)
+                {
+                    return false;
+                }
+            }
+        }
+
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
         ghdlMakeArguments.Add(top);
+        
+        if (libnames is not null)
+        {
+            foreach (string libname in libnames)
+            {
+                bool success = await MakeLibraryAsync(root, context, libname, workingDirectory);
+
+                if (!success)
+                {
+                    return false;
+                }
+            }
+        }
 
         List<string> ghdlElaborateArguments = ["-e"];
         ghdlElaborateArguments.AddRange(ghdlOptions);
@@ -177,7 +208,8 @@ public class GhdlService
         return true;
     }
 
-    private async Task<bool> ImportLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname, string workingDirectory)
+    private async Task<bool> ImportLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname,
+        string workingDirectory)
     {
         // Get files contained in library
         IEnumerable<string>? libraryFiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
@@ -203,12 +235,14 @@ public class GhdlService
         var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
         if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
         
+        ghdlOptions.Add($"--work={libname}");
+        
         List<string> ghdlInitArguments = ["-i"];
         ghdlInitArguments.AddRange(ghdlOptions);
         ghdlInitArguments.AddRange(vhdlFiles);
         
         var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
-            "GHDL Init...",
+            $"GHDL Init for library {libname}...",
             AppState.Loading, true);
         
         return initFiles.success;
