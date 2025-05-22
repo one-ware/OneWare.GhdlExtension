@@ -177,6 +177,43 @@ public class GhdlService
         return true;
     }
 
+    private async Task<bool> ImportLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname, string workingDirectory)
+    {
+        // Get files contained in library
+        IEnumerable<string>? libraryFiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
+
+        if (libraryFiles is null)
+        {
+            _logger.Warning($"Library {libname} is empty");
+            
+            return true;
+        }
+        
+        IEnumerable<string> vhdlFiles = root.Files
+            .Where(x => !root.CompileExcluded.Contains(x))
+            .Where(x => x.Extension is ".vhd" or ".vhdl")
+            .Where(x => !libraryFiles.Contains(x.RelativePath))
+            .Select(x => x.RelativePath);
+        
+        List<string> ghdlOptions = [];
+        
+        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
+    
+        var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
+        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
+        
+        List<string> ghdlInitArguments = ["-i"];
+        ghdlInitArguments.AddRange(ghdlOptions);
+        ghdlInitArguments.AddRange(vhdlFiles);
+        
+        var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
+            "GHDL Init...",
+            AppState.Loading, true);
+        
+        return initFiles.success;
+    }
+
     public async Task<bool> SynthAsync(IProjectFile file, string outputType, string outputDirectory)
     {
         _dockService.Show<IOutputService>();
