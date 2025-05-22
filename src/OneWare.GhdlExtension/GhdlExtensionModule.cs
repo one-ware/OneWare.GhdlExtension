@@ -186,6 +186,8 @@ public class GhdlExtensionModule : IModule
     };
     
     public const string GhdlPathSetting = "GhdlModule_GhdlPath";
+    
+    IProjectExplorerService? _projectExplorerService;
 
     public void RegisterTypes(IContainerRegistry containerRegistry)
     {
@@ -264,16 +266,18 @@ public class GhdlExtensionModule : IModule
         
         containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
         {
-            if (list[0] is IProjectFile {Extension: ".vhd" or ".vhdl" } file && file.Root is UniversalFpgaProjectRoot root)
+            if (list[0] is IProjectFile {Extension: ".vhd" or ".vhdl", Root: UniversalFpgaProjectRoot root } file)
             {
                 ObservableCollection<MenuItemViewModel>? items = new ObservableCollection<MenuItemViewModel>();
 
-                if (root.GetProjectPropertyArray("GHDL_Libraries") is null)
+                IEnumerable<string>? libs = root.GetProjectPropertyArray("GHDL_Libraries");
+
+                if (libs is null)
                 {
                     return;
                 }
                 
-                foreach (string lib in root.GetProjectPropertyArray("GHDL_Libraries"))
+                foreach (string lib in libs)
                 {
                     items.Add(new MenuItemViewModel($"GHDL_Library_{lib}")
                     {
@@ -291,10 +295,19 @@ public class GhdlExtensionModule : IModule
         }));
         
         containerProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
+        
+        _projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
     }
 
     private async Task AddFileToLibraryAsync(string library, IProjectFile file)
     {
-        
+        if (file.Root is UniversalFpgaProjectRoot root)
+        {
+            // Prefix library collections with "GHDL-LIB" to reduce chance of collisions with other keys
+            root.AddToProjectPropertyArray($"GHDL-LIB_{library}", file.RelativePath);
+
+            // Save project so that the modifications are stored to disk
+            await _projectExplorerService?.SaveProjectAsync(root)!;
+        }
     }
 }
