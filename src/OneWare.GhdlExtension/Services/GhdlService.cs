@@ -173,7 +173,7 @@ public class GhdlService
 
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
-        ghdlMakeArguments.Add(top);
+        ghdlMakeArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
         
         if (libnames is not null)
         {
@@ -190,7 +190,7 @@ public class GhdlService
 
         List<string> ghdlElaborateArguments = ["-e"];
         ghdlElaborateArguments.AddRange(ghdlOptions);
-        ghdlElaborateArguments.Add(top);
+        ghdlElaborateArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
 
         var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
             "GHDL Init...",
@@ -272,7 +272,7 @@ public class GhdlService
         
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
-        ghdlMakeArguments.Add(top);
+        ghdlMakeArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
         
         var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
             $"Running GHDL Make for library {libname}...", AppState.Loading, true);
@@ -308,6 +308,45 @@ public class GhdlService
         }
         
         return ret;
+    }
+
+    private string GetLibraryPrefixForToplevel(UniversalFpgaProjectRoot root)
+    {
+        IEnumerable<string>? libnames = root.GetProjectPropertyArray("GHDL_Libraries");
+
+        if (libnames is null)
+        {
+            return "";
+        }
+        
+        string? top = root.TopEntity?.RelativePath;
+
+        if (top is null)
+        {
+            _logger.Error("No toplevel entity has been set");
+            
+            return "";
+        }
+
+        foreach (string libname in libnames)
+        {
+            IEnumerable<string>? libfiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
+
+            if (libfiles is null || !libfiles.Any())
+            {
+                continue;
+            }
+
+            foreach (var file in libfiles)
+            {
+                if (libfiles.Contains(top))
+                {
+                    return $"{libname}.";
+                }
+            }
+        }
+        
+        return "";
     }
 
     public async Task<bool> SynthAsync(IProjectFile file, string outputType, string outputDirectory)
