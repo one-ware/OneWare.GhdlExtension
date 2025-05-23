@@ -348,38 +348,47 @@ public class GhdlService
 
     public async Task<bool> SynthAsync(IProjectFile file, string outputType, string outputDirectory)
     {
-        _dockService.Show<IOutputService>();
-        
-        var settings = await TestBenchContextManager.LoadContextAsync(file);
-
-        var top = Path.GetFileNameWithoutExtension(file.FullPath);
-        var workingDirectory = file.Root!.FullPath;
-
-        var vhdlStandard = (file.Root as UniversalFpgaProjectRoot)?.GetProjectProperty("VHDL_Standard") ?? "02";
-        List<string> ghdlOptions = [$"--std={vhdlStandard}"];
-
-        var elaborateResult = await ElaborateAsync(file, settings);
-        if (!elaborateResult) return false;
-
-        List<string> ghdlSynthArguments = ["--synth"];
-        ghdlSynthArguments.AddRange(ghdlOptions);
-        ghdlSynthArguments.Add($"--out={outputType}");
-        ghdlSynthArguments.Add(top);
-
-        var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
-            "Running GHDL Synth...", AppState.Loading, true);
-        if (!synth.success) return false;
-
-        var extension = outputType switch
+        if (file.Root is UniversalFpgaProjectRoot root)
         {
-            "dot" => ".dot",
-            "verilog" => ".v",
-            _ => ".file"
-        };
+            _dockService.Show<IOutputService>();
 
-        await File.WriteAllTextAsync(Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension), synth.output);
+            var settings = await TestBenchContextManager.LoadContextAsync(file);
 
-        return true;
+            var top = Path.GetFileNameWithoutExtension(file.FullPath);
+            var workingDirectory = root.FullPath;
+
+            var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? "02";
+            List<string> ghdlOptions = [$"--std={vhdlStandard}"];
+
+            var elaborateResult = await ElaborateAsync(file, settings);
+            if (!elaborateResult) return false;
+
+            List<string> ghdlSynthArguments = ["--synth"];
+            ghdlSynthArguments.AddRange(ghdlOptions);
+            ghdlSynthArguments.Add($"--out={outputType}");
+            ghdlSynthArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
+
+            var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
+                "Running GHDL Synth...", AppState.Loading, true);
+            if (!synth.success) return false;
+
+            var extension = outputType switch
+            {
+                "dot" => ".dot",
+                "verilog" => ".v",
+                _ => ".file"
+            };
+
+            await File.WriteAllTextAsync(
+                Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension),
+                synth.output);
+
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     private Task SimulateCurrentFileAsync()
@@ -391,80 +400,88 @@ public class GhdlService
 
     public async Task<bool> SimulateFileAsync(IProjectFile file)
     {
-        _dockService.Show<IOutputService>();
-        
-        var settings = await TestBenchContextManager.LoadContextAsync(file);
-        
-        var top = Path.GetFileNameWithoutExtension(file.FullPath);
-        var workingDirectory = file.Root!.FullPath;
-        List<string> ghdlOptions = [];
-        
-        List<string> simulatingOptions = [];
-        
-        var waveOutput = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.WaveOutputFormat)) ?? "VCD";
-
-        var waveOutputArgument = waveOutput switch
+        if (file.Root is UniversalFpgaProjectRoot root)
         {
-            "VCD" => "vcd",
-            "GHW" => "wave",
-            "FST" => "fst",
-            _ => string.Empty
-        };
-        
-        var waveFilePath = Path.Combine(file.TopFolder!.RelativePath,$"{top}.{waveOutput.ToLower()}");
-        var waveFormFileArgument = $"--{waveOutputArgument}={waveFilePath}";
-        
-        var additionalGhdlOptions = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
-        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
-        
-        var additionalGhdlSimOptions = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlSimOptions));
-        if(additionalGhdlSimOptions != null) simulatingOptions.AddRange(additionalGhdlSimOptions.Split(' '));
-        
-        var vhdlStandard = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
-        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
-        
-        var assertLevel = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AssertLevel));
-        if(assertLevel != null) simulatingOptions.Add($"--assert-level={assertLevel}");
-        
-        var stopTime = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.SimulationStopTime));
-        if(stopTime != null) simulatingOptions.Add($"--stop-time={stopTime}");
+            _dockService.Show<IOutputService>();
 
-        var elaborateResult = await ElaborateAsync(file, settings);
-        if (!elaborateResult) return false;
+            var settings = await TestBenchContextManager.LoadContextAsync(file);
 
-        if (file.Root.SearchRelativePath(waveFilePath) is not IFile waveFormFile)
-        {
-            waveFormFile = _projectExplorerService.GetTemporaryFile(Path.Combine(file.Root.RootFolderPath, waveFilePath));
-        }
-        
-        //Open VCD inside IDE and prepare to stream
-        if (waveOutput == "VCD")
-        {
-            if (!File.Exists(waveFormFile.FullPath)) await File.Create(waveFormFile.FullPath).DisposeAsync();
-                
-            var doc = await _dockService.OpenFileAsync(waveFormFile);
-            
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            if (doc is IStreamableDocument vcd)
+            var top = Path.GetFileNameWithoutExtension(file.FullPath);
+            var workingDirectory = root.FullPath;
+            List<string> ghdlOptions = [];
+
+            List<string> simulatingOptions = [];
+
+            var waveOutput = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.WaveOutputFormat)) ?? "VCD";
+
+            var waveOutputArgument = waveOutput switch
             {
-                vcd.PrepareLiveStream();
+                "VCD" => "vcd",
+                "GHW" => "wave",
+                "FST" => "fst",
+                _ => string.Empty
+            };
+
+            var waveFilePath = Path.Combine(file.TopFolder!.RelativePath, $"{top}.{waveOutput.ToLower()}");
+            var waveFormFileArgument = $"--{waveOutputArgument}={waveFilePath}";
+
+            var additionalGhdlOptions =
+                settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
+            if (additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
+
+            var additionalGhdlSimOptions =
+                settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlSimOptions));
+            if (additionalGhdlSimOptions != null) simulatingOptions.AddRange(additionalGhdlSimOptions.Split(' '));
+
+            var vhdlStandard = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+            if (vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
+
+            var assertLevel = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AssertLevel));
+            if (assertLevel != null) simulatingOptions.Add($"--assert-level={assertLevel}");
+
+            var stopTime = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.SimulationStopTime));
+            if (stopTime != null) simulatingOptions.Add($"--stop-time={stopTime}");
+
+            var elaborateResult = await ElaborateAsync(file, settings);
+            if (!elaborateResult) return false;
+
+            if (file.Root.SearchRelativePath(waveFilePath) is not IFile waveFormFile)
+            {
+                waveFormFile =
+                    _projectExplorerService.GetTemporaryFile(Path.Combine(file.Root.RootFolderPath, waveFilePath));
             }
-        } 
 
-        List<string> ghdlRunArguments = ["-r"];
-        ghdlRunArguments.AddRange(ghdlOptions);
-        ghdlRunArguments.Add(top);
-        ghdlRunArguments.Add(waveFormFileArgument);
-        ghdlRunArguments.AddRange(simulatingOptions);
-        
-        var run = await ExecuteGhdlAsync(ghdlRunArguments, workingDirectory,
-            "Running GHDL Simulation...", AppState.Loading, true);
+            //Open VCD inside IDE and prepare to stream
+            if (waveOutput == "VCD")
+            {
+                if (!File.Exists(waveFormFile.FullPath)) await File.Create(waveFormFile.FullPath).DisposeAsync();
 
-        if (run.success && waveOutput is "GHW" or "FST")
-        {
-            _ = await _dockService.OpenFileAsync(waveFormFile);
+                var doc = await _dockService.OpenFileAsync(waveFormFile);
+
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (doc is IStreamableDocument vcd)
+                {
+                    vcd.PrepareLiveStream();
+                }
+            }
+
+            List<string> ghdlRunArguments = ["-r"];
+            ghdlRunArguments.AddRange(ghdlOptions);
+            ghdlRunArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
+            ghdlRunArguments.Add(waveFormFileArgument);
+            ghdlRunArguments.AddRange(simulatingOptions);
+
+            var run = await ExecuteGhdlAsync(ghdlRunArguments, workingDirectory,
+                "Running GHDL Simulation...", AppState.Loading, true);
+
+            if (run.success && waveOutput is "GHW" or "FST")
+            {
+                _ = await _dockService.OpenFileAsync(waveFormFile);
+            }
+
+            return run.success;
         }
 
-        return run.success;
+        return false;
     }
 }
