@@ -323,9 +323,51 @@ public class GhdlExtensionModule : IModule
             }
         }));
         
+        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
+        {
+            if (list[0] is IProjectFolder { Root: UniversalFpgaProjectRoot root } folder && folder.Children.Any(x => x is IProjectFile file))
+            {
+                IEnumerable<string>? libs = root.GetProjectPropertyArray("GHDL_Libraries");
+
+                if (libs is null)
+                {
+                    return;
+                }
+                
+                ObservableCollection<MenuItemViewModel>? items = new ObservableCollection<MenuItemViewModel>();
+
+                foreach (string lib in libs)
+                {
+                    items.Add(new MenuItemViewModel($"GHDL_Library_{lib}")
+                    {
+                        Header = lib,
+                        Command = new AsyncRelayCommand(() => AddFolderToLibraryAsync(lib, folder))
+                    });
+                }
+                
+                models.Add(new MenuItemViewModel("GHDL_Folder_Add")
+                {
+                    Header = "Add folder to library",
+                    Items = items
+                });
+            }
+        } ));
+        
         containerProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
         
         _projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
+    }
+
+    private async Task AddFolderToLibraryAsync(string library, IProjectFolder folder)
+    {
+        if (folder.Root is UniversalFpgaProjectRoot root)
+        {
+            foreach (var file in folder.Children.Where(x =>
+                         x is IProjectFile { Extension: ".vhd" or ".vhdl" }))
+            {
+                await AddFileToLibraryAsync(library, (file as IProjectFile)!);
+            }
+        }
     }
 
     private async Task AddFileToLibraryAsync(string library, IProjectFile file)
