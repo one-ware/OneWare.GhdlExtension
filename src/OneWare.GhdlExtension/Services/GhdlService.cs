@@ -224,7 +224,7 @@ public class GhdlService
         IEnumerable<string> vhdlFiles = root.Files
             .Where(x => !root.CompileExcluded.Contains(x))
             .Where(x => x.Extension is ".vhd" or ".vhdl")
-            .Where(x => !libraryFiles.Contains(x.RelativePath))
+            .Where(x => libraryFiles.Contains(x.RelativePath))
             .Select(x => x.RelativePath);
         
         List<string> ghdlOptions = [];
