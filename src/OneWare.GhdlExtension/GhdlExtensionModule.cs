@@ -268,8 +268,8 @@ public class GhdlExtensionModule : IModule
         {
             if (list[0] is IProjectFile {Extension: ".vhd" or ".vhdl", Root: UniversalFpgaProjectRoot root } file)
             {
-                ObservableCollection<MenuItemViewModel>? items = new ObservableCollection<MenuItemViewModel>();
-
+                string associatedLibrary = "";
+                
                 IEnumerable<string>? libs = root.GetProjectPropertyArray("GHDL_Libraries");
 
                 if (libs is null)
@@ -277,20 +277,49 @@ public class GhdlExtensionModule : IModule
                     return;
                 }
                 
-                foreach (string lib in libs)
+                foreach (string libname in libs)
                 {
-                    items.Add(new MenuItemViewModel($"GHDL_Library_{lib}")
+                    IEnumerable<string>? libfiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
+
+                    if (libfiles is null || !libfiles.Any())
                     {
-                        Header = lib,
-                        Command = new AsyncRelayCommand(() => AddFileToLibraryAsync(lib, file))
+                        continue;
+                    }
+
+                    if (libfiles.Contains(file.RelativePath))
+                    {
+                        associatedLibrary = libname;
+                        break;
+                    }
+                }
+
+                if (associatedLibrary.Length == 0)
+                {
+                    ObservableCollection<MenuItemViewModel>? items = new ObservableCollection<MenuItemViewModel>();
+
+                    foreach (string lib in libs)
+                    {
+                        items.Add(new MenuItemViewModel($"GHDL_Library_{lib}")
+                        {
+                            Header = lib,
+                            Command = new AsyncRelayCommand(() => AddFileToLibraryAsync(lib, file))
+                        });
+                    }
+
+                    models.Add(new MenuItemViewModel("GHDL_Library_Add")
+                    {
+                        Header = "Add to library",
+                        Items = items
                     });
                 }
-                
-                models.Add(new MenuItemViewModel("GHDL_Library_Add")
+                else
                 {
-                    Header = "Add to library",
-                    Items = items
-                });
+                    models.Add(new MenuItemViewModel("GHDL_Library_Remove")
+                    {
+                        Header = $"Remove from library {associatedLibrary}",
+                        Command = new AsyncRelayCommand(() => RemoveFileFromLibraryAsync(associatedLibrary, file))
+                    });
+                }
             }
         }));
         
@@ -306,6 +335,19 @@ public class GhdlExtensionModule : IModule
             // Prefix library collections with "GHDL-LIB" to reduce chance of collisions with other keys
             root.AddToProjectPropertyArray($"GHDL-LIB_{library}", file.RelativePath);
 
+            // Save project so that the modifications are stored to disk
+            await _projectExplorerService?.SaveProjectAsync(root)!;
+        }
+    }
+
+    private async Task RemoveFileFromLibraryAsync(string library, IProjectFile file)
+    {
+        if (file.Root is UniversalFpgaProjectRoot root)
+        {
+            root.SetProjectPropertyArray($"GHDL-LIB_{library}",
+                root.GetProjectPropertyArray($"GHDL-LIB_{library}")!.Where(x => !x.Equals(file.RelativePath))
+                    .ToArray());
+            
             // Save project so that the modifications are stored to disk
             await _projectExplorerService?.SaveProjectAsync(root)!;
         }

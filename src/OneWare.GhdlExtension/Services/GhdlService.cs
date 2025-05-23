@@ -336,13 +336,10 @@ public class GhdlService
             {
                 continue;
             }
-
-            foreach (var file in libfiles)
+            
+            if (libfiles.Contains(top))
             {
-                if (libfiles.Contains(top))
-                {
-                    return $"{libname}.";
-                }
+                return $"{libname}.";
             }
         }
         
