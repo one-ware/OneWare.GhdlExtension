@@ -372,7 +372,7 @@ public class GhdlExtensionModule : IModule
 
     private async Task AddFileToLibraryAsync(string library, IProjectFile file)
     {
-        if (file.Root is UniversalFpgaProjectRoot root)
+        if (file.Root is UniversalFpgaProjectRoot root && !root.CompileExcluded.Contains(file))
         {
             // Prefix library collections with "GHDL-LIB" to reduce chance of collisions with other keys
             root.AddToProjectPropertyArray($"GHDL-LIB_{library}", file.RelativePath);
