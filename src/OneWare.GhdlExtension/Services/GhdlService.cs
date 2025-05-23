@@ -402,6 +402,12 @@ public class GhdlService
     {
         if (file.Root is UniversalFpgaProjectRoot root)
         {
+            foreach (string configFile in Directory.EnumerateFiles(root.FullPath)
+                         .Where(x => Path.GetExtension(x) is ".cf"))
+            {
+                File.Delete(configFile);
+            }
+            
             _dockService.Show<IOutputService>();
 
             var settings = await TestBenchContextManager.LoadContextAsync(file);
