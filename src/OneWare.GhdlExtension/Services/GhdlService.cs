@@ -148,8 +148,11 @@ public class GhdlService
             
         List<string> ghdlOptions = [];
         
-        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
-        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
+        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ?? root.GetProjectProperty("VHDL_Standard");
+        if (vhdlStandard != null)
+        {
+            ghdlOptions.Add($"--std={vhdlStandard}");
+        }
     
         var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
         if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
@@ -229,7 +232,7 @@ public class GhdlService
         
         List<string> ghdlOptions = [];
         
-        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ?? root.GetProjectProperty("VHDL_Standard");
         if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
     
         var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
@@ -262,7 +265,7 @@ public class GhdlService
         
         List<string> ghdlOptions = [];
         
-        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ?? root.GetProjectProperty("VHDL_Standard");
         if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
     
         var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
@@ -357,7 +360,7 @@ public class GhdlService
             var top = Path.GetFileNameWithoutExtension(file.FullPath);
             var workingDirectory = root.FullPath;
 
-            var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? "02";
+            var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? "93c";
             List<string> ghdlOptions = [$"--std={vhdlStandard}"];
 
             var elaborateResult = await ElaborateAsync(file, settings);
@@ -441,7 +444,7 @@ public class GhdlService
                 settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlSimOptions));
             if (additionalGhdlSimOptions != null) simulatingOptions.AddRange(additionalGhdlSimOptions.Split(' '));
 
-            var vhdlStandard = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+            var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
             if (vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
 
             var assertLevel = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AssertLevel));
