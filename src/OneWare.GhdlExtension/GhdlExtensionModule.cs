@@ -347,7 +347,7 @@ public class GhdlExtensionModule : IModule
                 
                 models.Add(new MenuItemViewModel("GHDL_Folder_Add")
                 {
-                    Header = "Add folder to library",
+                    Header = "Add files in folder to library",
                     Items = items
                 });
             }
