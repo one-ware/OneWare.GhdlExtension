@@ -158,6 +158,19 @@ public class GhdlService
         ghdlInitArguments.AddRange(ghdlOptions);
         ghdlInitArguments.AddRange(vhdlFiles);
 
+        List<string> ghdlMakeArguments = ["-m"];
+        ghdlMakeArguments.AddRange(ghdlOptions);
+        ghdlMakeArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
+
+        List<string> ghdlElaborateArguments = ["-e"];
+        ghdlElaborateArguments.AddRange(ghdlOptions);
+        ghdlElaborateArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
+
+        var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
+            "GHDL Init...",
+            AppState.Loading, true);
+        if (!initFiles.success) return false;
+        
         if (libnames is not null)
         {
             foreach (string libname in libnames)
@@ -171,9 +184,9 @@ public class GhdlService
             }
         }
 
-        List<string> ghdlMakeArguments = ["-m"];
-        ghdlMakeArguments.AddRange(ghdlOptions);
-        ghdlMakeArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
+        var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
+            "Running GHDL Make...", AppState.Loading, true);
+        if (!make.success) return false;
         
         if (libnames is not null)
         {
@@ -187,19 +200,6 @@ public class GhdlService
                 }
             }
         }
-
-        List<string> ghdlElaborateArguments = ["-e"];
-        ghdlElaborateArguments.AddRange(ghdlOptions);
-        ghdlElaborateArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
-
-        var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
-            "GHDL Init...",
-            AppState.Loading, true);
-        if (!initFiles.success) return false;
-
-        var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
-            "Running GHDL Make...", AppState.Loading, true);
-        if (!make.success) return false;
 
         var elaboration = await ExecuteGhdlAsync(ghdlElaborateArguments, workingDirectory,
             "Running GHDL Elaboration...", AppState.Loading, true);
