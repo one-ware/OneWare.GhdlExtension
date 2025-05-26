@@ -427,6 +427,8 @@ public class GhdlService
                 "FST" => "fst",
                 _ => string.Empty
             };
+            
+            await AddSimFileExtensionToIncludesAsync(root, waveOutput);
 
             var waveFilePath = Path.Combine(file.TopFolder!.RelativePath, $"{top}.{waveOutput.ToLower()}");
             var waveFormFileArgument = $"--{waveOutputArgument}={waveFilePath}";
@@ -489,5 +491,37 @@ public class GhdlService
         }
 
         return false;
+    }
+
+    private async Task AddSimFileExtensionToIncludesAsync(UniversalFpgaProjectRoot root, string extension)
+    {
+        string actualExtension = extension switch
+        {
+            "VCD" => "vcd",
+            "GHW" => "ghw",
+            "FST" => "fst",
+            _ => string.Empty
+        };
+
+        if (actualExtension == string.Empty)
+        {
+            return;
+        }
+
+        var includedFileTypes = root.GetProjectPropertyArray("Include");
+
+        if (includedFileTypes is null)
+        {
+            return;
+        }
+
+        if (includedFileTypes.Contains($"*.{actualExtension}"))
+        {
+            return;
+        }
+        
+        root.AddToProjectPropertyArray("Include", $"*.{actualExtension}");
+
+        await _projectExplorerService.SaveProjectAsync(root);
     }
 }
