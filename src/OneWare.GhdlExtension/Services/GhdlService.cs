@@ -62,7 +62,7 @@ public class GhdlService
         });
     }
 
-    private async Task<(bool success, string output)> ExecuteGhdlAsync(IReadOnlyCollection<string> arguments, string workingDirectory, string status,
+    private async Task<(bool success, string stdout, string stderr)> ExecuteGhdlAsync(IReadOnlyCollection<string> arguments, string workingDirectory, string status,
         AppState state = AppState.Loading, bool showTimer = false)
     {
         if (!File.Exists(_path) || (_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries") && 
@@ -72,11 +72,13 @@ public class GhdlService
             if (!install)
             {
                 _logger.Warning("GHDL not found. Please set the path in the settings or (re)install it from the package manager.");
-                return (false,string.Empty);
+                return (false,string.Empty, string.Empty);
             }
         }
+        
+        string stdout = string.Empty, stderr = string.Empty;
 
-        return await _childProcessService.ExecuteShellAsync(_path, arguments, workingDirectory,
+        (bool success, _) = await _childProcessService.ExecuteShellAsync(_path, arguments, workingDirectory,
             status, state, showTimer, x =>
             {
                 if (x.StartsWith("ghdl:error:"))
@@ -86,6 +88,7 @@ public class GhdlService
                 }
 
                 _outputService.WriteLine(x);
+                stdout += x + "\n";
                 return true;
             }, x =>
             {
@@ -96,8 +99,11 @@ public class GhdlService
                 }
                 
                 _logger.Warning(x);
+                stderr += x + "\n";
                 return true;
             });
+        
+        return (success, stdout, stderr);
     }
 
     private async Task<bool> InstallGhdlAsync()
@@ -399,7 +405,7 @@ public class GhdlService
             {
                 await File.WriteAllTextAsync(
                     Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension),
-                    synth.output);
+                    synth.stdout);
             }
 
             return true;
