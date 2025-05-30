@@ -145,8 +145,19 @@ public class GhdlService
 
         var top = Path.GetFileNameWithoutExtension(file.FullPath);
         var workingDirectory = file.Root!.FullPath;
+        var buildDirectory = Path.Combine(workingDirectory, "build");
+        
+        // Remove pre-existing *.cf files from build directory
+        foreach (string configFile in Directory.EnumerateFiles(buildDirectory)
+                     .Where(x => Path.GetExtension(x) is ".cf"))
+        {
+            File.Delete(configFile);
+        }
             
         List<string> ghdlOptions = [];
+        
+        ghdlOptions.Add($"--workdir={buildDirectory}");
+        ghdlOptions.Add($"-P{buildDirectory}");
         
         var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ?? root.GetProjectProperty("VHDL_Standard");
         if (vhdlStandard != null)
@@ -178,7 +189,7 @@ public class GhdlService
         {
             foreach (string libname in libnames)
             {
-                bool success = await ImportLibraryAsync(root, context, libname, workingDirectory);
+                bool success = await ImportLibraryAsync(root, context, libname, workingDirectory, ghdlOptions);
                 
                 if (!success)
                 {
@@ -195,7 +206,7 @@ public class GhdlService
         {
             foreach (string libname in libnames)
             {
-                bool success = await MakeLibraryAsync(root, context, libname, workingDirectory);
+                bool success = await MakeLibraryAsync(root, context, libname, workingDirectory, ghdlOptions);
 
                 if (!success)
                 {
@@ -212,8 +223,10 @@ public class GhdlService
     }
 
     private async Task<bool> ImportLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname,
-        string workingDirectory)
+        string workingDirectory, List<string> ghdlOptions)
     {
+        string buildDirectory = Path.Combine(workingDirectory, "build");
+        
         // Get files contained in library
         IEnumerable<string>? libraryFiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
 
@@ -230,14 +243,6 @@ public class GhdlService
             .Where(x => libraryFiles.Contains(x.RelativePath))
             .Select(x => x.RelativePath);
         
-        List<string> ghdlOptions = [];
-        
-        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ?? root.GetProjectProperty("VHDL_Standard");
-        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
-    
-        var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
-        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
-        
         ghdlOptions.Add($"--work={libname}");
         
         List<string> ghdlInitArguments = ["-i"];
@@ -252,8 +257,10 @@ public class GhdlService
     }
 
     private async Task<bool> MakeLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname,
-        string workingDirectory)
+        string workingDirectory, List<string> ghdlOptions)
     {
+        string buildDirectory = Path.Combine(workingDirectory, "build");
+        
         string? top = Path.GetFileNameWithoutExtension(root.TopEntity?.FullPath);
 
         if (top is null)
@@ -262,14 +269,6 @@ public class GhdlService
             
             return false;
         }
-        
-        List<string> ghdlOptions = [];
-        
-        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ?? root.GetProjectProperty("VHDL_Standard");
-        if(vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
-    
-        var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
-        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
         
         ghdlOptions.Add($"--work={libname}");
         
@@ -368,6 +367,8 @@ public class GhdlService
 
             var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? "93c";
             List<string> ghdlOptions = [$"--std={vhdlStandard}"];
+            ghdlOptions.Add($"--workdir={buildDirectory}");
+            ghdlOptions.Add($"-P{buildDirectory}");
 
             var elaborateResult = await ElaborateAsync(file, settings);
             if (!elaborateResult) return false;
@@ -390,7 +391,7 @@ public class GhdlService
             
             ghdlSynthArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
 
-            var synth = await ExecuteGhdlAsync(ghdlSynthArguments, buildDirectory,
+            var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
                 "Running GHDL Synth...", AppState.Loading, true);
             if (!synth.success) return false;
 
@@ -418,19 +419,16 @@ public class GhdlService
     {
         if (file.Root is UniversalFpgaProjectRoot root)
         {
-            foreach (string configFile in Directory.EnumerateFiles(root.FullPath)
-                         .Where(x => Path.GetExtension(x) is ".cf"))
-            {
-                File.Delete(configFile);
-            }
-            
             _dockService.Show<IOutputService>();
 
             var settings = await TestBenchContextManager.LoadContextAsync(file);
 
             var top = Path.GetFileNameWithoutExtension(file.FullPath);
             var workingDirectory = root.FullPath;
+            string buildDirectory = Path.Combine(workingDirectory, "build");
             List<string> ghdlOptions = [];
+            ghdlOptions.Add($"--workdir={buildDirectory}");
+            ghdlOptions.Add($"-P{buildDirectory}");
 
             List<string> simulatingOptions = [];
 
