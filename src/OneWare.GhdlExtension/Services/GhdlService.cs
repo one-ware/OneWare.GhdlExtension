@@ -353,12 +353,18 @@ public class GhdlService
     {
         if (file.Root is UniversalFpgaProjectRoot root)
         {
+            PackageModel? ghdlPackagemodel = _packageService.Packages.GetValueOrDefault("ghdl");
+            Version ghdlVersion = new Version(5, 0, 1);
+            bool directVerilogOutput = (ghdlPackagemodel is not null &&
+                 ghdlVersion.CompareTo(Version.Parse(ghdlPackagemodel.InstalledVersion!.Version!)) <= 0 && outputType.Equals("verilog"));
+            
             _dockService.Show<IOutputService>();
 
             var settings = await TestBenchContextManager.LoadContextAsync(file);
 
             var top = Path.GetFileNameWithoutExtension(file.FullPath);
             var workingDirectory = root.FullPath;
+            string buildDirectory = Path.Combine(workingDirectory, "build");
 
             var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? "93c";
             List<string> ghdlOptions = [$"--std={vhdlStandard}"];
@@ -369,12 +375,7 @@ public class GhdlService
             List<string> ghdlSynthArguments = ["--synth"];
             ghdlSynthArguments.AddRange(ghdlOptions);
             ghdlSynthArguments.Add($"--out={outputType}");
-            ghdlSynthArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
-
-            var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
-                "Running GHDL Synth...", AppState.Loading, true);
-            if (!synth.success) return false;
-
+            
             var extension = outputType switch
             {
                 "dot" => ".dot",
@@ -382,16 +383,28 @@ public class GhdlService
                 _ => ".file"
             };
 
-            await File.WriteAllTextAsync(
-                Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension),
-                synth.output);
+            if (directVerilogOutput)
+            {
+                ghdlSynthArguments.Add($"-o={Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath))}{extension}");
+            }
+            
+            ghdlSynthArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
+
+            var synth = await ExecuteGhdlAsync(ghdlSynthArguments, buildDirectory,
+                "Running GHDL Synth...", AppState.Loading, true);
+            if (!synth.success) return false;
+
+            if (!directVerilogOutput)
+            {
+                await File.WriteAllTextAsync(
+                    Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension),
+                    synth.output);
+            }
 
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 
     private Task SimulateCurrentFileAsync()
