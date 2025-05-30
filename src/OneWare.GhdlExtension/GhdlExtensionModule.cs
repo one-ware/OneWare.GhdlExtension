@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
@@ -372,13 +373,14 @@ public class GhdlExtensionModule : IModule
 
     private async Task AddFileToLibraryAsync(string library, IProjectFile file)
     {
-        if (file.Root is UniversalFpgaProjectRoot root && !root.CompileExcluded.Contains(file))
+        if (file.Root is UniversalFpgaProjectRoot root && !root.CompileExcluded.Contains(file) && !(root.GetProjectPropertyArray($"GHDL-LIB_{library}") ?? Array.Empty<string>()).Any(x => x.Equals(file.RelativePath)))
         {
             // Prefix library collections with "GHDL-LIB" to reduce chance of collisions with other keys
             root.AddToProjectPropertyArray($"GHDL-LIB_{library}", file.RelativePath);
 
             // Save project so that the modifications are stored to disk
-            await _projectExplorerService?.SaveProjectAsync(root)!;
+            // Use the UI Thread to prevent file access violations
+            await Dispatcher.UIThread.Invoke(async () => await _projectExplorerService?.SaveProjectAsync(root)!);
         }
     }
 
