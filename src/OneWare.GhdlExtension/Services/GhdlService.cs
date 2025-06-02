@@ -153,13 +153,21 @@ public class GhdlService
         var workingDirectory = file.Root!.FullPath;
         var buildDirectory = Path.Combine(workingDirectory, "build");
         
-        // Remove pre-existing *.cf files from build directory
-        foreach (string configFile in Directory.EnumerateFiles(buildDirectory)
-                     .Where(x => Path.GetExtension(x) is ".cf"))
+        // Ensure existence of build directory
+        if (!Directory.Exists(buildDirectory))
         {
-            File.Delete(configFile);
+            Directory.CreateDirectory(buildDirectory);
         }
-            
+        else
+        {
+            // Remove pre-existing *.cf files from build directory
+            foreach (string configFile in Directory.EnumerateFiles(buildDirectory)
+                         .Where(x => Path.GetExtension(x) is ".cf"))
+            {
+                File.Delete(configFile);
+            }
+        }
+
         List<string> ghdlOptions = [];
         
         ghdlOptions.Add($"--workdir={buildDirectory}");
