@@ -173,7 +173,7 @@ public class GhdlExtensionModule : IModule
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "bin/ghdl",
+                                RelativePath = "ghdl-mcode-5.0.1-macos13-x86_64/bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
