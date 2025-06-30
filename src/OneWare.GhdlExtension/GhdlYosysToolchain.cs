@@ -1,50 +1,42 @@
 ﻿using OneWare.Essentials.Services;
-using OneWare.GhdlExtension.Services;
+using OneWare.GhdlExtension;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
+using OneWare.OssCadSuiteIntegration.Yosys;
 using Prism.Ioc;
 
 namespace OneWare.GhdlExtension;
 
-public class GhdlYosysToolchain(GhdlService ghdlService, FpgaService fpgaService) : IFpgaToolchain
+public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler, YosysToolchain yosysToolchain) : IFpgaToolchain
 {
     static string? val;
-    IFpgaToolchain? yosysToolchain;
-    IFpgaPreCompileStep? preStep;
     
     public void OnProjectCreated(UniversalFpgaProjectRoot project)
     {
-        yosysToolchain = fpgaService.Toolchains.First(x => x.Name == "Yosys");
-        preStep = fpgaService.PreCompileSteps.First(x => x.Name == "GHDL Vhdl to Verilog");
     }
 
     public void LoadConnections(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
-        //Code aus Yosys-Toolchain kopieren oder sie direkt rufen?
-        throw new NotImplementedException();
+        yosysToolchain.LoadConnections(project, fpga);
     }
 
     public void SaveConnections(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
-        //Code aus Yosys-Toolchain kopieren oder sie direkt rufen?
-        throw new NotImplementedException();
+        yosysToolchain.SaveConnections(project, fpga);
     }
 
-    public Task<bool> CompileAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
+    public async Task<bool> CompileAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
         if (val == null)
         {
             ContainerLocator.Container.Resolve<ILogger>().Error("Yosys binary not found");
+            return false;
         }
-        else
-        {
-
-            bool success;
-            GhdlVhdlToVerilogPreCompileStep task = new GhdlVhdlToVerilogPreCompileStep(ghdlService, logger);
-            success = await task;
-            //Code aus Yosys-Toolchain kopieren oder sie direkt rufen?
-            return ;
-        }
+        
+        bool success = await ghdlPreCompiler.PerformPreCompileStepAsync(project, fpga);
+        if (!success) return false;
+        success = await yosysToolchain.CompileAsync(project, fpga);
+        return success;
     }
 
     public string Name => "GHDL_Yosys";

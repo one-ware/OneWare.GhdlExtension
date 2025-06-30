@@ -356,6 +356,9 @@ public class GhdlExtensionModule : IModule
         containerProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
         
         _projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
+        
+        containerProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
+        GhdlYosysToolchain.SubscribeToSettings(containerProvider.Resolve<ISettingsService>());
     }
 
     private async Task AddFolderToLibraryAsync(string library, IProjectFolder folder)
@@ -395,7 +398,5 @@ public class GhdlExtensionModule : IModule
             await _projectExplorerService?.SaveProjectAsync(root)!;
         }
         
-        containerProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
-        GhdlYosysToolchain.SubscribeToSettings(containerProvider.Resolve<ISettingsService>());
     }
 }
