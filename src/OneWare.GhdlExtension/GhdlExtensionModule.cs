@@ -3,7 +3,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
-using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
@@ -395,5 +394,8 @@ public class GhdlExtensionModule : IModule
             // Save project so that the modifications are stored to disk
             await _projectExplorerService?.SaveProjectAsync(root)!;
         }
+        
+        containerProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
+        GhdlYosysToolchain.SubscribeToSettings(containerProvider.Resolve<ISettingsService>());
     }
 }
