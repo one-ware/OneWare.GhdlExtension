@@ -14,20 +14,19 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
     {
         try
         {
-            var buildPath = Path.Combine(project.FullPath, "ghdl-output");
-            if(Directory.Exists(buildPath)) Directory.Delete(buildPath, true);
+            var buildPath = Path.Combine(project.FullPath, "build");
             Directory.CreateDirectory(buildPath);
-            var buildDir = project.AddFolder("ghdl-output");
+            var ghdlOutputPath = Path.Combine(buildPath, "ghdl-output");
+            if(Directory.Exists(ghdlOutputPath)) Directory.Delete(ghdlOutputPath, true);
+            Directory.CreateDirectory(ghdlOutputPath);
+            var ghdlOutputDir = project.AddFolder(Path.Combine("build", "ghdl-output"));
 
-            foreach (var vhdlFile in project.Files
-                         .Where(x => x.Extension is ".vhd" or ".vhdl")
-                         .Where(x => !project.CompileExcluded.Contains(x))
-                         .Where(x => !project.TestBenches.Contains(x)).ToList())
-            {
-                var success = await ghdlService.SynthAsync(vhdlFile, "verilog", buildPath);
+            var vhdlFile = project.Files.First(x => x == project.TopEntity);
+            
+                var success = await ghdlService.SynthAsync(vhdlFile, "verilog", ghdlOutputPath);
                 if (!success) return false;
-            }
-            ProjectHelper.ImportEntries(buildPath, buildDir);
+            
+            ProjectHelper.ImportEntries(ghdlOutputPath, ghdlOutputDir);
             return true;
         }
         catch (Exception e)

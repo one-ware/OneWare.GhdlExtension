@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using OneWare.Essentials.Models;
@@ -8,8 +10,14 @@ using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
 using OneWare.GhdlExtension.Services;
+using OneWare.GhdlExtension.ViewModels;
+using OneWare.GhdlExtension.Views;
+using OneWare.OssCadSuiteIntegration.ViewModels;
+using OneWare.OssCadSuiteIntegration.Views;
+using OneWare.OssCadSuiteIntegration.Yosys;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
+using OneWare.UniversalFpgaProjectSystem.ViewModels;
 using Prism.Ioc;
 using Prism.Modularity;
 
@@ -196,6 +204,12 @@ public class GhdlExtensionModule : IModule
 
     public void OnInitialized(IContainerProvider containerProvider)
     {
+        var yosysService = containerProvider.Resolve<YosysService>();
+        var windowService = containerProvider.Resolve<IWindowService>();
+        var projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
+        var fpgaService = containerProvider.Resolve<FpgaService>();
+        
+        
         containerProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
         
         containerProvider.Resolve<ISettingsService>().RegisterTitledFilePath("Simulator", "GHDL", GhdlPathSetting,
@@ -359,6 +373,105 @@ public class GhdlExtensionModule : IModule
         
         containerProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
         GhdlYosysToolchain.SubscribeToSettings(containerProvider.Resolve<ISettingsService>());
+        
+        
+        
+        containerProvider.Resolve<IWindowService>().RegisterUiExtension("CompileWindow_TopRightExtension",
+            new UiExtension(x =>
+            {
+                if (x is not UniversalFpgaProjectPinPlannerViewModel cm) return null;
+                return new GhdlYosysCompileWindowExtensionView
+                {
+                    DataContext =
+                        containerProvider.Resolve<GhdlYosysCompileWindowExtensionViewModel>((
+                            typeof(UniversalFpgaProjectPinPlannerViewModel), cm))
+                };
+            }));
+
+
+        var ghdlPreCompiler = containerProvider.Resolve<GhdlVhdlToVerilogPreCompileStep>();
+        containerProvider.Resolve<IWindowService>().RegisterUiExtension("UniversalFpgaToolBar_CompileMenuExtension",
+            new UiExtension(
+                x =>
+                {
+                    if (x is not UniversalFpgaProjectRoot { Toolchain: GhdlYosysToolchain } root) return null;
+
+                    var name = root.Properties["Fpga"]?.ToString();
+                    var fpgaPackage = fpgaService.FpgaPackages.FirstOrDefault(obj => obj.Name == name);
+                    var fpga = fpgaPackage?.LoadFpga();
+                    
+                    return new StackPanel()
+                    {
+                        Orientation = Orientation.Vertical,
+                        Children =
+                        {
+                            new MenuItem()
+                            {
+                                Header = "Run Synthesis",
+                                Command = new AsyncRelayCommand(async () =>
+                                {
+                                    await projectExplorerService.SaveOpenFilesForProjectAsync(root);
+                                    await ghdlPreCompiler.PerformPreCompileStepAsync(root, new FpgaModel(fpga!));
+                                    await yosysService.SynthAsync(root, new FpgaModel(fpga!));
+                                }, () => fpga != null)
+                            },
+                            new MenuItem()
+                            {
+                                Header = "Run Fit",
+                                Command = new AsyncRelayCommand(async () =>
+                                {
+                                    await projectExplorerService.SaveOpenFilesForProjectAsync(root);
+                                    await yosysService.FitAsync(root, new FpgaModel(fpga!));
+                                }, () => fpga != null)
+                            },
+                            new MenuItem()
+                            {
+                                Header = "Run Assemble",
+                                Command = new AsyncRelayCommand(async () =>
+                                {
+                                    await projectExplorerService.SaveOpenFilesForProjectAsync(root);
+                                    await yosysService.AssembleAsync(root, new FpgaModel(fpga!));
+                                }, () => fpga != null)
+                            },
+                            new Separator(),
+                            new MenuItem()
+                            {
+                                Header = "Yosys Settings",
+                                Icon = new Image()
+                                {
+                                    Source = Application.Current!.FindResource(
+                                        Application.Current!.RequestedThemeVariant,
+                                        "Material.SettingsOutline") as IImage
+                                },
+                                Command = new AsyncRelayCommand(async () =>
+                                {
+                                    if (projectExplorerService
+                                            .ActiveProject is UniversalFpgaProjectRoot fpgaProjectRoot)
+                                    {
+                                        var selectedFpga = root.Properties["Fpga"]?.ToString();
+                                        var selectedFpgaPackage =
+                                            fpgaService.FpgaPackages.FirstOrDefault(obj => obj.Name == selectedFpga);
+
+                                        if (selectedFpgaPackage == null)
+                                        {
+                                            containerProvider.Resolve<ILogger>()
+                                                .Warning("No FPGA Selected. Open Pin Planner first!");
+                                            return;
+                                        }
+
+                                        await windowService.ShowDialogAsync(
+                                            new YosysCompileSettingsView
+                                            {
+                                                DataContext = new YosysCompileSettingsViewModel(fpgaProjectRoot,
+                                                    selectedFpgaPackage.LoadFpga())
+                                            });
+                                    }
+                                })
+                            }
+                        }
+                    };
+                }));
+
     }
 
     private async Task AddFolderToLibraryAsync(string library, IProjectFolder folder)
