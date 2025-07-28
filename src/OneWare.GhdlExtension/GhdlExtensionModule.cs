@@ -412,6 +412,11 @@ public class GhdlExtensionModule : IModule
                                 {
                                     await projectExplorerService.SaveOpenFilesForProjectAsync(root);
                                     await ghdlPreCompiler.PerformPreCompileStepAsync(root, new FpgaModel(fpga!));
+                                    /*
+                                        TODO: Nach Update des Yosys-Services den Aufruf austauschen.
+                                        var ghdlOutputPath = Path.Combine(root.FullPath, "build", "ghdl-output");
+                                        await yosysService.SynthAsync(root, new FpgaModel(fpga!), ghdlOutputPath);
+                                    */
                                     await yosysService.SynthAsync(root, new FpgaModel(fpga!));
                                 }, () => fpga != null)
                             },

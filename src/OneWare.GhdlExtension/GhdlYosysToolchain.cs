@@ -37,6 +37,11 @@ public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler,
 
         bool success = await ghdlPreCompiler.PerformPreCompileStepAsync(project, fpga);
         if (!success) return false;
+        /*
+            TODO: Nach Update des Yosys-Services den Aufruf austauschen.
+            var ghdlOutputPath = Path.Combine(project.FullPath, "build", "ghdl-output");
+            await yosysService.SynthAsync(root, new FpgaModel(fpga!), ghdlOutputPath);
+        */
         success = await yosysToolchain.CompileAsync(project, fpga);
         return success;
     }
