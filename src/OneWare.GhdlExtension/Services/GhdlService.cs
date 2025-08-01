@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using System.Text;
+using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
 using OneWare.Essentials.Enums;
 using OneWare.Essentials.Models;
@@ -76,7 +77,8 @@ public class GhdlService
             }
         }
         
-        string stdout = string.Empty, stderr = string.Empty;
+        StringBuilder stdoutBuilder = new StringBuilder();
+        StringBuilder stderrBuilder = new StringBuilder();
 
         (bool success, _) = await _childProcessService.ExecuteShellAsync(_path, arguments, workingDirectory,
             status, state, showTimer, x =>
@@ -88,7 +90,7 @@ public class GhdlService
                 }
 
                 _outputService.WriteLine(x);
-                stdout += x + "\n";
+                stdoutBuilder.AppendLine(x);
                 return true;
             }, x =>
             {
@@ -99,11 +101,11 @@ public class GhdlService
                 }
                 
                 _logger.Warning(x);
-                stderr += x + "\n";
+                stderrBuilder.AppendLine(x);
                 return true;
             });
         
-        return (success, stdout, stderr);
+        return (success, stdoutBuilder.ToString(), stderrBuilder.ToString());
     }
 
     private async Task<bool> InstallGhdlAsync()
