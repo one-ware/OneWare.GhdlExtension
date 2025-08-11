@@ -257,10 +257,9 @@ public class GhdlService
             .Where(x => libraryFiles.Contains(x.RelativePath))
             .Select(x => x.RelativePath);
         
-        ghdlOptions.Add($"--work={libname}");
-        
         List<string> ghdlInitArguments = ["-i"];
         ghdlInitArguments.AddRange(ghdlOptions);
+        ghdlInitArguments.Add($"--work={libname}");
         ghdlInitArguments.AddRange(vhdlFiles);
         
         var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
@@ -284,10 +283,9 @@ public class GhdlService
             return false;
         }
         
-        ghdlOptions.Add($"--work={libname}");
-        
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
+        ghdlMakeArguments.Add($"--work={libname}");
         ghdlMakeArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
         
         var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
