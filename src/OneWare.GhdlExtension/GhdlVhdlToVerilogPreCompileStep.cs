@@ -9,24 +9,29 @@ namespace OneWare.GhdlExtension;
 public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger logger) : IFpgaPreCompileStep
 {
     public string Name => "GHDL Vhdl to Verilog";
+
+    public string buildDir = "build";
+    public string ghdlOutputDir = "ghdl-output";
+    public string? verilogFileName;
     
     public async Task<bool> PerformPreCompileStepAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
         try
         {
-            var buildPath = Path.Combine(project.FullPath, "build");
+            var buildPath = Path.Combine(project.FullPath, buildDir);
             Directory.CreateDirectory(buildPath);
-            var ghdlOutputPath = Path.Combine(buildPath, "ghdl-output");
+            var ghdlOutputPath = Path.Combine(buildPath, ghdlOutputDir);
             if(Directory.Exists(ghdlOutputPath)) Directory.Delete(ghdlOutputPath, true);
             Directory.CreateDirectory(ghdlOutputPath);
-            var ghdlOutputDir = project.AddFolder(Path.Combine("build", "ghdl-output"));
+            
 
             var vhdlFile = project.Files.First(x => x == project.TopEntity);
+            verilogFileName = Path.GetFileNameWithoutExtension(vhdlFile.FullPath)+".v";
             
                 var success = await ghdlService.SynthAsync(vhdlFile, "verilog", ghdlOutputPath);
                 if (!success) return false;
             
-            ProjectHelper.ImportEntries(ghdlOutputPath, ghdlOutputDir);
+            
             return true;
         }
         catch (Exception e)

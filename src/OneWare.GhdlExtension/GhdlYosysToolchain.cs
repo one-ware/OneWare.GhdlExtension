@@ -37,12 +37,24 @@ public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler,
 
         bool success = await ghdlPreCompiler.PerformPreCompileStepAsync(project, fpga);
         if (!success) return false;
+        
         /*
-            TODO: Nach Update des Yosys-Services den Aufruf austauschen.
-            var ghdlOutputPath = Path.Combine(project.FullPath, "build", "ghdl-output");
-            await yosysService.SynthAsync(root, new FpgaModel(fpga!), ghdlOutputPath);
+          //  TODO: Nach Update des Yosys-Services den Aufruf austauschen.
+          try
+          {
+              var verilogFileName = ghdlPreCompiler.verilogFileName ?? throw new Exception("Invalid verilog file name!");
+              var ghdlOutputPath = Path.Combine(project.FullPath, ghdlPreCompiler.buildDir,
+                ghdlPreCompiler.ghdlOutputDir, verilogFileName);
+              success = await yosysToolchain.CompileAsync(project, fpga, ghdlOutputPath);
+              
+          }catch (Exception e)
+          {
+              ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
+              return false;
+          }
         */
         success = await yosysToolchain.CompileAsync(project, fpga);
+        
         return success;
     }
 

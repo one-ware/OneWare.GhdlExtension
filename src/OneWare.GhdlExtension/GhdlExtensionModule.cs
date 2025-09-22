@@ -411,13 +411,22 @@ public class GhdlExtensionModule : IModule
                                 Command = new AsyncRelayCommand(async () =>
                                 {
                                     await projectExplorerService.SaveOpenFilesForProjectAsync(root);
-                                    await ghdlPreCompiler.PerformPreCompileStepAsync(root, new FpgaModel(fpga!));
+                                    var fpgaModel = new FpgaModel(fpga!); 
+                                    await ghdlPreCompiler.PerformPreCompileStepAsync(root, fpgaModel);
                                     /*
-                                        TODO: Nach Update des Yosys-Services den Aufruf austauschen.
-                                        var ghdlOutputPath = Path.Combine(root.FullPath, "build", "ghdl-output");
+                                        //TODO: Nach Update des Yosys-Services den Aufruf austauschen.
+                                        try{
+                                        var verilogFileName = ghdlPreCompiler.verilogFileName ?? throw new Exception("Invalid verilog file name!");
+                                        var ghdlOutputPath = Path.Combine(root.FullPath, ghdlPreCompiler.buildDir,
+                                            ghdlPreCompiler.ghdlOutputDir, verilogFileName);
                                         await yosysService.SynthAsync(root, new FpgaModel(fpga!), ghdlOutputPath);
+                                        }catch (Exception e)
+                                        { 
+                                            ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
+                                        }
                                     */
-                                    await yosysService.SynthAsync(root, new FpgaModel(fpga!));
+                                    
+                                    await yosysService.SynthAsync(root, fpgaModel);
                                 }, () => fpga != null)
                             },
                             new MenuItem()
