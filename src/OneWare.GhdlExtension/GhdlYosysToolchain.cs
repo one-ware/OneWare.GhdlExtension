@@ -5,11 +5,12 @@ using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
 using OneWare.OssCadSuiteIntegration.Yosys;
 using Prism.Ioc;
+using SkiaSharp;
 
 namespace OneWare.GhdlExtension;
 
 
-public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler, YosysToolchain yosysToolchain) : IFpgaToolchain
+public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler, YosysToolchain yosysToolchain, YosysService yosysService) : IFpgaToolchain
 {
     static string? _val;
     
@@ -38,24 +39,22 @@ public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler,
         bool success = await ghdlPreCompiler.PerformPreCompileStepAsync(project, fpga);
         if (!success) return false;
         
-        /*
-          //  TODO: Nach Update des Yosys-Services den Aufruf austauschen.
-          try
-          {
-              var verilogFileName = ghdlPreCompiler.verilogFileName ?? throw new Exception("Invalid verilog file name!");
-              var ghdlOutputPath = Path.Combine(project.FullPath, ghdlPreCompiler.buildDir,
-                ghdlPreCompiler.ghdlOutputDir, verilogFileName);
-              success = await yosysToolchain.CompileAsync(project, fpga, ghdlOutputPath);
-              
-          }catch (Exception e)
-          {
-              ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
-              return false;
-          }
-        */
-        success = await yosysToolchain.CompileAsync(project, fpga);
-        
-        return success;
+       
+      try
+      {
+          var verilogFileName = ghdlPreCompiler.VerilogFileName ?? throw new Exception("Invalid verilog file name!");
+          var ghdlOutputPath = Path.Combine(project.FullPath, ghdlPreCompiler.BuildDir, 
+              ghdlPreCompiler.GhdlOutputDir, verilogFileName);
+          var mandatoryFileList = new List<string>(1) {ghdlOutputPath};
+          
+          success = await yosysService.CompileAsync(project, fpga, mandatoryFileList);
+          return success;
+      }
+      catch (Exception e)
+      {
+          ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
+          return false;
+      }
     }
 
     public string Name => "GHDL_Yosys";

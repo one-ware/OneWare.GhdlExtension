@@ -1,5 +1,4 @@
-﻿using OneWare.Essentials.Helpers;
-using OneWare.Essentials.Services;
+﻿using OneWare.Essentials.Services;
 using OneWare.GhdlExtension.Services;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
@@ -10,29 +9,26 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
 {
     public string Name => "GHDL Vhdl to Verilog";
 
-    public string buildDir = "build";
-    public string ghdlOutputDir = "ghdl-output";
-    public string? verilogFileName;
+    public readonly string BuildDir = "build";
+    public readonly string GhdlOutputDir = "ghdl-output";
+    public string? VerilogFileName;
     
     public async Task<bool> PerformPreCompileStepAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
         try
         {
-            var buildPath = Path.Combine(project.FullPath, buildDir);
+            var buildPath = Path.Combine(project.FullPath, BuildDir);
             Directory.CreateDirectory(buildPath);
-            var ghdlOutputPath = Path.Combine(buildPath, ghdlOutputDir);
+            var ghdlOutputPath = Path.Combine(buildPath, GhdlOutputDir);
             if(Directory.Exists(ghdlOutputPath)) Directory.Delete(ghdlOutputPath, true);
             Directory.CreateDirectory(ghdlOutputPath);
             
 
             var vhdlFile = project.Files.First(x => x == project.TopEntity);
-            verilogFileName = Path.GetFileNameWithoutExtension(vhdlFile.FullPath)+".v";
+            VerilogFileName = Path.GetFileNameWithoutExtension(vhdlFile.FullPath)+".v";
             
-                var success = await ghdlService.SynthAsync(vhdlFile, "verilog", ghdlOutputPath);
-                if (!success) return false;
-            
-            
-            return true;
+            var success = await ghdlService.SynthAsync(vhdlFile, "verilog", ghdlOutputPath);
+            return success;
         }
         catch (Exception e)
         {

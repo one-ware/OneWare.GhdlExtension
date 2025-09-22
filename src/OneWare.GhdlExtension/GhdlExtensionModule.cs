@@ -413,20 +413,19 @@ public class GhdlExtensionModule : IModule
                                     await projectExplorerService.SaveOpenFilesForProjectAsync(root);
                                     var fpgaModel = new FpgaModel(fpga!); 
                                     await ghdlPreCompiler.PerformPreCompileStepAsync(root, fpgaModel);
-                                    /*
-                                        //TODO: Nach Update des Yosys-Services den Aufruf austauschen.
-                                        try{
-                                        var verilogFileName = ghdlPreCompiler.verilogFileName ?? throw new Exception("Invalid verilog file name!");
-                                        var ghdlOutputPath = Path.Combine(root.FullPath, ghdlPreCompiler.buildDir,
-                                            ghdlPreCompiler.ghdlOutputDir, verilogFileName);
-                                        await yosysService.SynthAsync(root, new FpgaModel(fpga!), ghdlOutputPath);
-                                        }catch (Exception e)
-                                        { 
-                                            ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
-                                        }
-                                    */
                                     
-                                    await yosysService.SynthAsync(root, fpgaModel);
+                                    try{
+                                        var verilogFileName = ghdlPreCompiler.VerilogFileName ?? throw new Exception("Invalid verilog file name!");
+                                        var ghdlOutputPath = Path.Combine(root.FullPath, ghdlPreCompiler.BuildDir,
+                                            ghdlPreCompiler.GhdlOutputDir, verilogFileName);
+                                        var mandatoryFileList = new List<string>(1) {ghdlOutputPath};
+                                        await yosysService.SynthAsync(root, new FpgaModel(fpga!), mandatoryFileList);
+                                    }
+                                    catch (Exception e)
+                                    { 
+                                        ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
+                                    }
+                                    
                                 }, () => fpga != null)
                             },
                             new MenuItem()
