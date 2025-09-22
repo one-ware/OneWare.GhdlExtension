@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using System.Text;
+using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
 using OneWare.Essentials.Enums;
 using OneWare.Essentials.Models;
@@ -76,7 +77,8 @@ public class GhdlService
             }
         }
         
-        string stdout = string.Empty, stderr = string.Empty;
+        StringBuilder stdoutBuilder = new StringBuilder();
+        StringBuilder stderrBuilder = new StringBuilder();
 
         (bool success, _) = await _childProcessService.ExecuteShellAsync(_path, arguments, workingDirectory,
             status, state, showTimer, x =>
@@ -88,7 +90,7 @@ public class GhdlService
                 }
 
                 _outputService.WriteLine(x);
-                stdout += x + "\n";
+                stdoutBuilder.AppendLine(x);
                 return true;
             }, x =>
             {
@@ -99,11 +101,11 @@ public class GhdlService
                 }
                 
                 _logger.Warning(x);
-                stderr += x + "\n";
+                stderrBuilder.AppendLine(x);
                 return true;
             });
         
-        return (success, stdout, stderr);
+        return (success, stdoutBuilder.ToString(), stderrBuilder.ToString());
     }
 
     private async Task<bool> InstallGhdlAsync()
@@ -254,13 +256,12 @@ public class GhdlService
         IEnumerable<string> vhdlFiles = root.Files
             .Where(x => !root.CompileExcluded.Contains(x))
             .Where(x => x.Extension is ".vhd" or ".vhdl")
-            .Where(x => libraryFiles.Contains(x.RelativePath))
+            .Where(x => libraryFiles.Contains(x.RelativePath.Replace('\\', '/')))
             .Select(x => x.RelativePath);
-        
-        ghdlOptions.Add($"--work={libname}");
         
         List<string> ghdlInitArguments = ["-i"];
         ghdlInitArguments.AddRange(ghdlOptions);
+        ghdlInitArguments.Add($"--work={libname}");
         ghdlInitArguments.AddRange(vhdlFiles);
         
         var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
@@ -284,10 +285,9 @@ public class GhdlService
             return false;
         }
         
-        ghdlOptions.Add($"--work={libname}");
-        
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
+        ghdlMakeArguments.Add($"--work={libname}");
         ghdlMakeArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
         
         var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,

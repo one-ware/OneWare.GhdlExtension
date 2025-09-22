@@ -300,7 +300,7 @@ public class GhdlExtensionModule : IModule
                         continue;
                     }
 
-                    if (libfiles.Contains(file.RelativePath))
+                    if (libfiles.Contains(file.RelativePath.Replace('\\', '/')))
                     {
                         associatedLibrary = libname;
                         break;
@@ -505,7 +505,7 @@ public class GhdlExtensionModule : IModule
         if (file.Root is UniversalFpgaProjectRoot root && !root.CompileExcluded.Contains(file) && !(root.GetProjectPropertyArray($"GHDL-LIB_{library}") ?? Array.Empty<string>()).Any(x => x.Equals(file.RelativePath)))
         {
             // Prefix library collections with "GHDL-LIB" to reduce chance of collisions with other keys
-            root.AddToProjectPropertyArray($"GHDL-LIB_{library}", file.RelativePath);
+            root.AddToProjectPropertyArray($"GHDL-LIB_{library}", file.RelativePath.Replace('\\', '/'));
 
             // Save project so that the modifications are stored to disk
             // Use the UI Thread to prevent file access violations
@@ -518,7 +518,7 @@ public class GhdlExtensionModule : IModule
         if (file.Root is UniversalFpgaProjectRoot root)
         {
             root.SetProjectPropertyArray($"GHDL-LIB_{library}",
-                root.GetProjectPropertyArray($"GHDL-LIB_{library}")!.Where(x => !x.Equals(file.RelativePath))
+                root.GetProjectPropertyArray($"GHDL-LIB_{library}")!.Where(x => !x.Equals(file.RelativePath.Replace('\\', '/')))
                     .ToArray());
             
             // Save project so that the modifications are stored to disk
