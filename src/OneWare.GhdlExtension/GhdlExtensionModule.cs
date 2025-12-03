@@ -14,7 +14,6 @@ using OneWare.GhdlExtension.ViewModels;
 using OneWare.GhdlExtension.Views;
 using OneWare.OssCadSuiteIntegration.ViewModels;
 using OneWare.OssCadSuiteIntegration.Views;
-using OneWare.OssCadSuiteIntegration.Yosys;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
 using OneWare.UniversalFpgaProjectSystem.ViewModels;
@@ -205,10 +204,10 @@ public class GhdlExtensionModule : IModule
 
     public void OnInitialized(IContainerProvider containerProvider)
     {
-        var ghdlToolchainService = containerProvider.Resolve<GhdlToolchainService>();
         var windowService = containerProvider.Resolve<IWindowService>();
         var projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
         var fpgaService = containerProvider.Resolve<FpgaService>();
+        
         
         
         containerProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
@@ -218,6 +217,8 @@ public class GhdlExtensionModule : IModule
             null, containerProvider.Resolve<IPaths>().NativeToolsDirectory, File.Exists);
 
         var ghdlService = containerProvider.Resolve<GhdlService>();
+        var ghdlToolchainService = containerProvider.Resolve<GhdlToolchainService>();
+
 
         // containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
         //     new MenuItemViewModel("SimulateGHDL")
