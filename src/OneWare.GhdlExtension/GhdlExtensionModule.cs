@@ -14,7 +14,6 @@ using OneWare.GhdlExtension.ViewModels;
 using OneWare.GhdlExtension.Views;
 using OneWare.OssCadSuiteIntegration.ViewModels;
 using OneWare.OssCadSuiteIntegration.Views;
-using OneWare.OssCadSuiteIntegration.Yosys;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
 using OneWare.UniversalFpgaProjectSystem.ViewModels;
@@ -259,14 +258,15 @@ public class GhdlExtensionModule : IModule
     public void RegisterTypes(IContainerRegistry containerRegistry)
     {
         containerRegistry.RegisterSingleton<GhdlService>();
+        containerRegistry.RegisterSingleton<GhdlToolchainService>();
     }
 
     public void OnInitialized(IContainerProvider containerProvider)
     {
-        var yosysService = containerProvider.Resolve<YosysService>();
         var windowService = containerProvider.Resolve<IWindowService>();
         var projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
         var fpgaService = containerProvider.Resolve<FpgaService>();
+        
         
         
         containerProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
@@ -276,6 +276,8 @@ public class GhdlExtensionModule : IModule
             null, containerProvider.Resolve<IPaths>().NativeToolsDirectory, File.Exists);
 
         var ghdlService = containerProvider.Resolve<GhdlService>();
+        var ghdlToolchainService = containerProvider.Resolve<GhdlToolchainService>();
+
 
         // containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
         //     new MenuItemViewModel("SimulateGHDL")
@@ -431,7 +433,6 @@ public class GhdlExtensionModule : IModule
         _projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
         
         containerProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
-        GhdlYosysToolchain.SubscribeToSettings(containerProvider.Resolve<ISettingsService>());
         
         
         
@@ -470,20 +471,7 @@ public class GhdlExtensionModule : IModule
                                 Command = new AsyncRelayCommand(async () =>
                                 {
                                     await projectExplorerService.SaveOpenFilesForProjectAsync(root);
-                                    var fpgaModel = new FpgaModel(fpga!); 
-                                    await ghdlPreCompiler.PerformPreCompileStepAsync(root, fpgaModel);
-                                    
-                                    try{
-                                        var verilogFileName = ghdlPreCompiler.VerilogFileName ?? throw new Exception("Invalid verilog file name!");
-                                        var ghdlOutputPath = Path.Combine(root.FullPath, ghdlPreCompiler.BuildDir,
-                                            ghdlPreCompiler.GhdlOutputDir, verilogFileName);
-                                        var mandatoryFileList = new List<string>(1) {ghdlOutputPath};
-                                        await yosysService.SynthAsync(root, new FpgaModel(fpga!), mandatoryFileList);
-                                    }
-                                    catch (Exception e)
-                                    { 
-                                        ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
-                                    }
+                                    await ghdlToolchainService.SynthAsync(root, new FpgaModel(fpga!));
                                     
                                 }, () => fpga != null)
                             },
@@ -493,7 +481,7 @@ public class GhdlExtensionModule : IModule
                                 Command = new AsyncRelayCommand(async () =>
                                 {
                                     await projectExplorerService.SaveOpenFilesForProjectAsync(root);
-                                    await yosysService.FitAsync(root, new FpgaModel(fpga!));
+                                    await ghdlToolchainService.FitAsync(root, new FpgaModel(fpga!));
                                 }, () => fpga != null)
                             },
                             new MenuItem()
@@ -502,7 +490,7 @@ public class GhdlExtensionModule : IModule
                                 Command = new AsyncRelayCommand(async () =>
                                 {
                                     await projectExplorerService.SaveOpenFilesForProjectAsync(root);
-                                    await yosysService.AssembleAsync(root, new FpgaModel(fpga!));
+                                    await ghdlToolchainService.AssembleAsync(root, new FpgaModel(fpga!));
                                 }, () => fpga != null)
                             },
                             new Separator(),

@@ -10,9 +10,8 @@ using SkiaSharp;
 namespace OneWare.GhdlExtension;
 
 
-public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler, YosysToolchain yosysToolchain, YosysService yosysService) : IFpgaToolchain
+public class GhdlYosysToolchain(GhdlToolchainService ghdlToolchainService, YosysToolchain yosysToolchain) : IFpgaToolchain
 {
-    static string? _val;
     
     public void OnProjectCreated(UniversalFpgaProjectRoot project)
     {
@@ -30,37 +29,8 @@ public class GhdlYosysToolchain(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler,
 
     public async Task<bool> CompileAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
-        if (_val == null)
-        {
-            ContainerLocator.Container.Resolve<ILogger>().Error("Yosys binary not found");
-            return false;
-        }
-
-        bool success = await ghdlPreCompiler.PerformPreCompileStepAsync(project, fpga);
-        if (!success) return false;
-        
-       
-      try
-      {
-          var verilogFileName = ghdlPreCompiler.VerilogFileName ?? throw new Exception("Invalid verilog file name!");
-          var ghdlOutputPath = Path.Combine(project.FullPath, ghdlPreCompiler.BuildDir, 
-              ghdlPreCompiler.GhdlOutputDir, verilogFileName);
-          var mandatoryFileList = new List<string>(1) {ghdlOutputPath};
-          
-          success = await yosysService.CompileAsync(project, fpga, mandatoryFileList);
-          return success;
-      }
-      catch (Exception e)
-      {
-          ContainerLocator.Container.Resolve<ILogger>().Error(e.Message, e);
-          return false;
-      }
+        return await ghdlToolchainService.CompileAsync(project, fpga);
     }
 
     public string Name => "GHDL_Yosys";
-
-    public static void SubscribeToSettings(ISettingsService settingsService)
-    {
-        settingsService.GetSettingObservable<string>("OssCadSuite_Path").Subscribe(x => _val = x);
-    }
 }
