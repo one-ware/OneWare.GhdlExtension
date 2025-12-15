@@ -15,6 +15,7 @@ public class GhdlYosysToolchain(GhdlToolchainService ghdlToolchainService, Yosys
     
     public void OnProjectCreated(UniversalFpgaProjectRoot project)
     {
+        yosysToolchain.OnProjectCreated(project);
     }
 
     public void LoadConnections(UniversalFpgaProjectRoot project, FpgaModel fpga)

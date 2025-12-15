@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/Properties/">
+    <File Path="Extension.md" />
+    <File Path="oneware-extension.json" />
+  </Folder>
+  <Project Path="src/OneWare.GhdlExtension/OneWare.GhdlExtension.csproj" />
+</Solution>
