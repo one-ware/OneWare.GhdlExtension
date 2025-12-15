@@ -3,6 +3,8 @@
     <PropertyGroup>
         <Version>0.12</Version>
         <TargetFramework>net10.0</TargetFramework>
+        <Version>0.11.2</Version>
+        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <EnableDynamicLoading>true</EnableDynamicLoading>
@@ -13,6 +15,15 @@
     <ItemGroup>
         <PackageReference Include="OneWare.Essentials" Version="0.11.11" Private="false" ExcludeAssets="runtime;Native" />
         <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.41.11" Private="false" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.Essentials" Version="0.11.10" Private="false" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.OssCadSuiteIntegration" Version="0.41.10" Private="true" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.41.10" Private="false" ExcludeAssets="runtime;Native" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Compile Update="Views\GhdlYosysCompileWindowExtensionView.axaml.cs">
+        <DependentUpon>GhdlYosysCompileWindowExtensionView.axaml</DependentUpon>
+      </Compile>
     </ItemGroup>
 
     <Target Name="GenerateCompatibilityFile" AfterTargets="Build">

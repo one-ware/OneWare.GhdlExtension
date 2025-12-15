@@ -102,6 +102,15 @@
           "target": "all"
         }
       ]
+    },
+    {
+      "version": "0.11.2",
+      "minStudioVersion": "0.21.8.0",
+      "targets": [
+        {
+          "target": "all"
+        }
+      ]
     }
   ]
 }
