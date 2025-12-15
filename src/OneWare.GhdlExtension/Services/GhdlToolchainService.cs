@@ -10,14 +10,13 @@ public class GhdlToolchainService
     private static string? _val;
     private readonly GhdlVhdlToVerilogPreCompileStep _ghdlPreCompiler;
     private readonly YosysService _yosysService;
+    private readonly ISettingsService _settingsService;
 
     public GhdlToolchainService(GhdlVhdlToVerilogPreCompileStep ghdlPreCompiler, YosysService yosysService, ISettingsService settingsService)
     {
         _ghdlPreCompiler = ghdlPreCompiler;
         _yosysService = yosysService;
-        
-        settingsService.GetSettingObservable<string>("OssCadSuite_Path").Subscribe(x => _val = x);
-
+        _settingsService = settingsService;
     }
     
     
@@ -66,5 +65,10 @@ public class GhdlToolchainService
     public async Task<bool> AssembleAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
         return await _yosysService.AssembleAsync(project, fpga);
+    }
+
+    public void SubscribeToSettings()
+    {
+        _settingsService.GetSettingObservable<string>("OssCadSuite_Path").Subscribe(x => _val = x);
     }
 }

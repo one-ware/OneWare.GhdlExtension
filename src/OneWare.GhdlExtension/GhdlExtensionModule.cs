@@ -277,6 +277,8 @@ public class GhdlExtensionModule : IModule
 
         var ghdlService = containerProvider.Resolve<GhdlService>();
         var ghdlToolchainService = containerProvider.Resolve<GhdlToolchainService>();
+        
+        containerProvider.Resolve<GhdlToolchainService>().SubscribeToSettings();
 
 
         // containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
