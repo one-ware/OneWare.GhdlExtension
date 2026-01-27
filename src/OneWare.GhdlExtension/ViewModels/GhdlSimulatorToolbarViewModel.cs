@@ -89,4 +89,25 @@ public class GhdlSimulatorToolbarViewModel(TestBenchContext context, IFpgaSimula
         }
     }
 
+    public string GtkwSaveFile
+    {
+        get => context.GetBenchProperty(nameof(GtkwSaveFile)) ?? "";
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value)) context.RemoveBenchProperty(nameof(GtkwSaveFile));
+            else context.SetBenchProperty(nameof(GtkwSaveFile), value);
+            OnPropertyChanged();
+        }
+    }
+
+    public string GtkwWaveArgs
+    {
+        get => context.GetBenchProperty(nameof(GtkwWaveArgs)) ?? "";
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value)) context.RemoveBenchProperty(nameof(GtkwWaveArgs));
+            else context.SetBenchProperty(nameof(GtkwWaveArgs), value);
+            OnPropertyChanged();
+        }
+    }
 }
