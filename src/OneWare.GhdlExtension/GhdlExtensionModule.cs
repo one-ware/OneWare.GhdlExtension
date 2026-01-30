@@ -259,9 +259,10 @@ public class GhdlExtensionModule : OneWareModuleBase
     {
         containerRegistry.AddSingleton<GhdlService>();
         containerRegistry.AddSingleton<GhdlToolchainService>();
+        containerRegistry.AddSingleton<GhdlVhdlToVerilogPreCompileStep>();
     }
 
-    public new void Initialize(IServiceProvider serviceProvider)
+    public override void Initialize(IServiceProvider serviceProvider)
     {
         var windowService = serviceProvider.Resolve<IWindowService>();
         var projectExplorerService = serviceProvider.Resolve<IProjectExplorerService>();

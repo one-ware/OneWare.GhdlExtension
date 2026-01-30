@@ -11,9 +11,9 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="OneWare.Essentials" Version="0.99.2.0" Private="false" ExcludeAssets="runtime;Native" />
-        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.99.2.0" Private="false" ExcludeAssets="runtime;Native" />
-        <PackageReference Include="OneWare.OssCadSuiteIntegration" Version="0.99.2.0" Private="true" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.Essentials" Version="0.99.3.0" Private="false" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="0.99.3.0" Private="false" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.OssCadSuiteIntegration" Version="0.99.3.0" Private="true" ExcludeAssets="runtime;Native" />
     </ItemGroup>
 
     <Target Name="GenerateCompatibilityFile" AfterTargets="Build">

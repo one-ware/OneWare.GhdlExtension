@@ -31,7 +31,8 @@ public class GhdlService
 
     private string _path = string.Empty;
 
-    public GhdlService(ILogger logger, IMainDockService dockService, ISettingsService settingsService, IPackageService packageService, IChildProcessService childProcessService, IEnvironmentService environmentService,
+    public GhdlService(ILogger logger, IMainDockService dockService, ISettingsService settingsService, 
+        IPackageService packageService, IChildProcessService childProcessService, IEnvironmentService environmentService,
         IOutputService outputService, IProjectExplorerService projectExplorerService)
     {
         _logger = logger;
