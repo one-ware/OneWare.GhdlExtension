@@ -13,13 +13,13 @@ public class GhdlSimulator : IFpgaSimulator
     private readonly GhdlService _ghdlService;
     public string Name => "GHDL";
     
-    public UiExtension? TestBenchToolbarTopUiExtension { get; } 
+    public OneWareUiExtension? TestBenchToolbarTopUiExtension { get; } 
 
     public GhdlSimulator(GhdlService ghdlService)
     {
         _ghdlService = ghdlService;
         
-        TestBenchToolbarTopUiExtension = new UiExtension(x =>
+        TestBenchToolbarTopUiExtension = new OneWareUiExtension(x =>
         {
             if (x is TestBenchContext tb)
             {

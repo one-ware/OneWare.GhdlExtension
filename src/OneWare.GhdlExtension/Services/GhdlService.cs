@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
+using Microsoft.Extensions.Logging;
 using OneWare.Essentials.Enums;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.Services;
@@ -14,7 +15,7 @@ namespace OneWare.GhdlExtension.Services;
 public class GhdlService
 {
     private readonly ILogger _logger;
-    private readonly IDockService _dockService;
+    private readonly IMainDockService _dockService;
     private readonly IPackageService _packageService;
     private readonly IChildProcessService _childProcessService;
     private readonly IEnvironmentService _environmentService;
@@ -30,7 +31,7 @@ public class GhdlService
 
     private string _path = string.Empty;
 
-    public GhdlService(ILogger logger, IDockService dockService, ISettingsService settingsService, IPackageService packageService, IChildProcessService childProcessService, IEnvironmentService environmentService,
+    public GhdlService(ILogger logger, IMainDockService dockService, ISettingsService settingsService, IPackageService packageService, IChildProcessService childProcessService, IEnvironmentService environmentService,
         IOutputService outputService, IProjectExplorerService projectExplorerService)
     {
         _logger = logger;
