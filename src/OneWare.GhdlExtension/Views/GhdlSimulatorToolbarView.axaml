@@ -19,6 +19,14 @@
                             <TextBlock Text="Additional GHDL Simulation Options"/>
                             <TextBox Text="{Binding AdditionalGhdlSimOptions}" />
                         </StackPanel>
+						<StackPanel Orientation="Vertical" Spacing="2">
+							<TextBlock Text="GTKWave Save File"/>
+							<TextBox Text="{Binding GtkwSaveFile}" />
+						</StackPanel>
+						<StackPanel Orientation="Vertical" Spacing="2">
+							<TextBlock Text="Additional GTKWave Arguments"/>
+							<TextBox Text="{Binding GtkwWaveArgs}" />
+						</StackPanel>
                     </StackPanel>
                 </Flyout>
             </Button.Flyout>
