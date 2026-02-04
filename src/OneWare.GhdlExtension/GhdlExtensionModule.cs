@@ -5,6 +5,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
@@ -17,12 +19,10 @@ using OneWare.OssCadSuiteIntegration.Views;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
 using OneWare.UniversalFpgaProjectSystem.ViewModels;
-using Prism.Ioc;
-using Prism.Modularity;
 
 namespace OneWare.GhdlExtension;
 
-public class GhdlExtensionModule : IModule
+public class GhdlExtensionModule : OneWareModuleBase
 {
     public static readonly Package GhdlPackage = new()
     {
@@ -255,48 +255,36 @@ public class GhdlExtensionModule : IModule
     
     IProjectExplorerService? _projectExplorerService;
 
-    public void RegisterTypes(IContainerRegistry containerRegistry)
+    public override void RegisterServices(IServiceCollection containerRegistry)
     {
-        containerRegistry.RegisterSingleton<GhdlService>();
-        containerRegistry.RegisterSingleton<GhdlToolchainService>();
+        containerRegistry.AddSingleton<GhdlService>();
+        containerRegistry.AddSingleton<GhdlToolchainService>();
+        containerRegistry.AddSingleton<GhdlVhdlToVerilogPreCompileStep>();
     }
 
-    public void OnInitialized(IContainerProvider containerProvider)
+    public override void Initialize(IServiceProvider serviceProvider)
     {
-        var windowService = containerProvider.Resolve<IWindowService>();
-        var projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
-        var fpgaService = containerProvider.Resolve<FpgaService>();
+        var windowService = serviceProvider.Resolve<IWindowService>();
+        var projectExplorerService = serviceProvider.Resolve<IProjectExplorerService>();
+        var fpgaService = serviceProvider.Resolve<FpgaService>();
+        var toolService = serviceProvider.Resolve<IToolService>();
         
         
         
-        containerProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
+        serviceProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
         
-        containerProvider.Resolve<ISettingsService>().RegisterTitledFilePath("Simulator", "GHDL", GhdlPathSetting,
+        serviceProvider.Resolve<ISettingsService>().RegisterTitledFilePath("Simulator", "GHDL", GhdlPathSetting,
             "GHDL Path", "Path for GHDL executable", "",
-            null, containerProvider.Resolve<IPaths>().NativeToolsDirectory, File.Exists);
+            null, serviceProvider.Resolve<IPaths>().NativeToolsDirectory, File.Exists);
 
-        var ghdlService = containerProvider.Resolve<GhdlService>();
-        var ghdlToolchainService = containerProvider.Resolve<GhdlToolchainService>();
+        var ghdlService = serviceProvider.Resolve<GhdlService>();
+        var ghdlToolchainService = serviceProvider.Resolve<GhdlToolchainService>();
         
-        containerProvider.Resolve<GhdlToolchainService>().SubscribeToSettings();
-
-
-        // containerProvider.Resolve<IWindowService>().RegisterMenuItem("MainWindow_MainMenu/Ghdl",
-        //     new MenuItemViewModel("SimulateGHDL")
-        //     {
-        //         Header = "Simulate project with GHDL",
-        //         Command = ghdlService.SimulateCommand,
-        //     });
-
-        // containerProvider.Resolve<IWindowService>()
-        //     .RegisterUiExtension("MainWindow_LeftToolBarExtension", new UiExtension(x => new GhdlMainWindowToolBarExtension()
-        //     {
-        //         DataContext = ghdlService
-        //     }));
+        serviceProvider.Resolve<GhdlToolchainService>().SubscribeToSettings();
         
-        containerProvider.Resolve<FpgaService>().RegisterSimulator<GhdlSimulator>();
+        serviceProvider.Resolve<FpgaService>().RegisterSimulator<GhdlSimulator>();
 
-        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu((x,l) =>
+        serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu((x,l) =>
         {
             if (x is [IProjectFile { Extension: ".vhd" or ".vhdl" } file])
             {
@@ -328,7 +316,7 @@ public class GhdlExtensionModule : IModule
             }
         });
         
-        containerProvider.Resolve<IProjectSettingsService>().AddProjectSetting("GHDL_Libraries", new ListBoxSetting("GHDL libraries", []), 
+        serviceProvider.Resolve<IProjectSettingsService>().AddProjectSetting("GHDL_Libraries", new ListBoxSetting("GHDL libraries", []), 
             file =>
             {
                 if (file is UniversalFpgaProjectRoot root)
@@ -341,7 +329,7 @@ public class GhdlExtensionModule : IModule
                 }
             });
         
-        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
+        serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
         {
             if (list[0] is IProjectFile {Extension: ".vhd" or ".vhdl", Root: UniversalFpgaProjectRoot root } file)
             {
@@ -400,7 +388,7 @@ public class GhdlExtensionModule : IModule
             }
         }));
         
-        containerProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
+        serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
         {
             if (list[0] is IProjectFolder { Root: UniversalFpgaProjectRoot root } folder && folder.Children.Any(x => x is IProjectFile file))
             {
@@ -430,30 +418,30 @@ public class GhdlExtensionModule : IModule
             }
         } ));
         
-        containerProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
+        serviceProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
         
-        _projectExplorerService = containerProvider.Resolve<IProjectExplorerService>();
+        _projectExplorerService = serviceProvider.Resolve<IProjectExplorerService>();
         
-        containerProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
+        serviceProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
         
         
         
-        containerProvider.Resolve<IWindowService>().RegisterUiExtension("CompileWindow_TopRightExtension",
-            new UiExtension(x =>
+        serviceProvider.Resolve<IWindowService>().RegisterUiExtension("CompileWindow_TopRightExtension",
+            new OneWareUiExtension(x =>
             {
                 if (x is not UniversalFpgaProjectPinPlannerViewModel cm) return null;
                 return new GhdlYosysCompileWindowExtensionView
                 {
                     DataContext =
-                        containerProvider.Resolve<GhdlYosysCompileWindowExtensionViewModel>((
+                        serviceProvider.Resolve<GhdlYosysCompileWindowExtensionViewModel>((
                             typeof(UniversalFpgaProjectPinPlannerViewModel), cm))
                 };
             }));
 
 
-        var ghdlPreCompiler = containerProvider.Resolve<GhdlVhdlToVerilogPreCompileStep>();
-        containerProvider.Resolve<IWindowService>().RegisterUiExtension("UniversalFpgaToolBar_CompileMenuExtension",
-            new UiExtension(
+        var ghdlPreCompiler = serviceProvider.Resolve<GhdlVhdlToVerilogPreCompileStep>();
+        serviceProvider.Resolve<IWindowService>().RegisterUiExtension("UniversalFpgaToolBar_CompileMenuExtension",
+            new OneWareUiExtension(
                 x =>
                 {
                     if (x is not UniversalFpgaProjectRoot { Toolchain: GhdlYosysToolchain } root) return null;
@@ -516,7 +504,7 @@ public class GhdlExtensionModule : IModule
 
                                         if (selectedFpgaPackage == null)
                                         {
-                                            containerProvider.Resolve<ILogger>()
+                                            serviceProvider.Resolve<ILogger>()
                                                 .Warning("No FPGA Selected. Open Pin Planner first!");
                                             return;
                                         }

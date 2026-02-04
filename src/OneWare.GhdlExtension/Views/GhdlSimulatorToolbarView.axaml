@@ -33,7 +33,7 @@
             <Image Source="{DynamicResource BoxIcons.RegularMenu}" Width="14" />
         </Button>
         
-        <StackPanel DockPanel.Dock="Left" Classes="HToolBar" ClipToBounds="True">
+        <StackPanel DockPanel.Dock="Left" Classes="ToolBar" ClipToBounds="True">
             <TextBlock VerticalAlignment="Center" Text="VHDL Standard"
                        ToolTip.Tip="Select the VHDL standard expected by GHDL" />
             <Border Classes="RoundToolBar">
