@@ -120,6 +120,16 @@
           "target": "all"
         }
       ]
+    },
+    {
+      "version": "0.99.4",
+      "isPrerelease": true,
+      "minStudioVersion": "0.99.4",
+      "targets": [
+        {
+          "target": "all"
+        }
+      ]
     }
   ]
 }
