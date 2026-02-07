@@ -4,6 +4,7 @@ using DynamicData.Binding;
 using Microsoft.Extensions.Logging;
 using OneWare.Essentials.Enums;
 using OneWare.Essentials.Models;
+using OneWare.Essentials.PackageManager.Compatibility;
 using OneWare.Essentials.Services;
 using OneWare.Essentials.ViewModels;
 using OneWare.GhdlExtension.ViewModels;
@@ -115,7 +116,7 @@ public class GhdlService
         if (_packageService.Packages.GetValueOrDefault(GhdlExtensionModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing})
         {
             if (!_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries")) return false;
-            if(!await _packageService.InstallAsync(GhdlExtensionModule.GhdlPackage)) return false;
+            if(await _packageService.InstallAsync(GhdlExtensionModule.GhdlPackage) is {Status: PackageInstallResultReason.Installed or PackageInstallResultReason.AlreadyInstalled}) return false;
             SetEnvironment();
             return true;
         }
@@ -368,7 +369,7 @@ public class GhdlService
     {
         if (file.Root is UniversalFpgaProjectRoot root)
         {
-            PackageModel? ghdlPackagemodel = _packageService.Packages.GetValueOrDefault("ghdl");
+            IPackageState? ghdlPackagemodel = _packageService.Packages.GetValueOrDefault("ghdl");
             Version ghdlVersion = new Version(5, 0, 1);
             bool directVerilogOutput = (ghdlPackagemodel is not null &&
                  ghdlVersion.CompareTo(Version.Parse(ghdlPackagemodel.InstalledVersion!.Version!)) <= 0 && outputType.Equals("verilog"));
