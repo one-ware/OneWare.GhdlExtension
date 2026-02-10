@@ -1,4 +1,5 @@
 ﻿using OneWare.Essentials.Models;
+using OneWare.Essentials.Services;
 using OneWare.GhdlExtension.Services;
 using OneWare.GhdlExtension.ViewModels;
 using OneWare.GhdlExtension.Views;
@@ -11,11 +12,12 @@ namespace OneWare.GhdlExtension;
 public class GhdlSimulator : IFpgaSimulator
 {
     private readonly GhdlService _ghdlService;
+
     public string Name => "GHDL";
     
     public OneWareUiExtension? TestBenchToolbarTopUiExtension { get; } 
 
-    public GhdlSimulator(GhdlService ghdlService)
+    public GhdlSimulator(GhdlService ghdlService, IProjectExplorerService projectExplorerService)
     {
         _ghdlService = ghdlService;
         
@@ -24,8 +26,8 @@ public class GhdlSimulator : IFpgaSimulator
             if (x is TestBenchContext tb)
             {
                 //Set the default VHDL standard to the project's standard if possible
-                var project = (tb.File as IProjectFile)?.Root;
-                var globalVhdlVersion = (project as UniversalFpgaProjectRoot)?.GetProjectProperty("VHDL_Standard");
+                var root = projectExplorerService.GetRootFromFile(tb.FilePath);
+                var globalVhdlVersion = (root as UniversalFpgaProjectRoot)?.Properties.GetString("vhdlStandard");
 
                 var vhdlSetting = tb.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
                 if(vhdlSetting == null && globalVhdlVersion != null) 
@@ -40,9 +42,8 @@ public class GhdlSimulator : IFpgaSimulator
         });
     }
     
-    public Task<bool> SimulateAsync(IFile file)
+    public Task<bool> SimulateAsync(string fullPath)
     {
-        if (file is IProjectFile projectFile) return _ghdlService.SimulateFileAsync(projectFile);
-        return Task.FromResult(false);
+        return _ghdlService.SimulateFileAsync(fullPath);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Text.Json.Nodes;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -7,6 +8,8 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OneWare.Essentials.Extensions;
+using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
@@ -33,7 +36,7 @@ public class GhdlExtensionModule : OneWareModuleBase
         Description = "Open Source VHDL Simulator",
         License = "GPL 2.0",
         IconUrl = "https://raw.githubusercontent.com/ghdl/ghdl/master/logo/icon.png",
-        Links = 
+        Links =
         [
             new PackageLink()
             {
@@ -41,7 +44,7 @@ public class GhdlExtensionModule : OneWareModuleBase
                 Url = "https://github.com/ghdl/ghdl"
             }
         ],
-        Tabs = 
+        Tabs =
         [
             new PackageTab()
             {
@@ -164,7 +167,8 @@ public class GhdlExtensionModule : OneWareModuleBase
                     new PackageTarget()
                     {
                         Target = "linux-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-mcode-5.0.1-ubuntu24.04-x86_64.tar.gz",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-mcode-5.0.1-ubuntu24.04-x86_64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
@@ -177,7 +181,8 @@ public class GhdlExtensionModule : OneWareModuleBase
                     new PackageTarget()
                     {
                         Target = "osx-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-mcode-5.0.1-macos13-x86_64.tar.gz",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-mcode-5.0.1-macos13-x86_64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
@@ -210,7 +215,8 @@ public class GhdlExtensionModule : OneWareModuleBase
                     new PackageTarget()
                     {
                         Target = "linux-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-ubuntu24.04-x86_64.tar.gz",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-ubuntu24.04-x86_64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
@@ -223,7 +229,8 @@ public class GhdlExtensionModule : OneWareModuleBase
                     new PackageTarget()
                     {
                         Target = "osx-x64",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-macos13-x86_64.tar.gz",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-macos13-x86_64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
@@ -236,7 +243,8 @@ public class GhdlExtensionModule : OneWareModuleBase
                     new PackageTarget()
                     {
                         Target = "osx-arm",
-                        Url = "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-macos13-arm.tar.gz",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-macos13-arm.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
@@ -250,9 +258,9 @@ public class GhdlExtensionModule : OneWareModuleBase
             }
         ]
     };
-    
+
     public const string GhdlPathSetting = "GhdlModule_GhdlPath";
-    
+
     IProjectExplorerService? _projectExplorerService;
 
     public override void RegisterServices(IServiceCollection containerRegistry)
@@ -268,83 +276,85 @@ public class GhdlExtensionModule : OneWareModuleBase
         var projectExplorerService = serviceProvider.Resolve<IProjectExplorerService>();
         var fpgaService = serviceProvider.Resolve<FpgaService>();
         var toolService = serviceProvider.Resolve<IToolService>();
-        
-        
-        
+
+
         serviceProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
-        
+
         serviceProvider.Resolve<ISettingsService>().RegisterTitledFilePath("Simulator", "GHDL", GhdlPathSetting,
             "GHDL Path", "Path for GHDL executable", "",
             null, serviceProvider.Resolve<IPaths>().NativeToolsDirectory, File.Exists);
 
         var ghdlService = serviceProvider.Resolve<GhdlService>();
         var ghdlToolchainService = serviceProvider.Resolve<GhdlToolchainService>();
-        
+
         serviceProvider.Resolve<GhdlToolchainService>().SubscribeToSettings();
-        
+
         serviceProvider.Resolve<FpgaService>().RegisterSimulator<GhdlSimulator>();
 
-        serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu((x,l) =>
+        serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu((x, l) =>
         {
             if (x is [IProjectFile { Extension: ".vhd" or ".vhdl" } file])
             {
-                l.Add(new MenuItemViewModel("GHDL")
+                l.Add(new MenuItemModel("GHDL")
                 {
                     Header = "GHDL",
                     Items =
                     [
-                        new MenuItemViewModel("SimulateWithGHDL")
+                        new MenuItemModel("SimulateWithGHDL")
                         {
                             Header = "Simulate with GHDL",
-                            Command = new AsyncRelayCommand(() => ghdlService.SimulateFileAsync(file)),
-                            IconObservable = Application.Current!.GetResourceObservable("Material.Pulse"),
+                            Command = new AsyncRelayCommand(() => ghdlService.SimulateFileAsync(file.FullPath)),
+                            Icon = new IconModel("Material.Pulse"),
                         },
 
-                        new MenuItemViewModel("SynthGhdlToVerilog")
+                        new MenuItemModel("SynthGhdlToVerilog")
                         {
                             Header = "Convert to Verilog Netlist",
-                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "verilog", file.TopFolder!.FullPath)),
+                            Command = new AsyncRelayCommand(() =>
+                                ghdlService.SynthAsync(file.FullPath, "verilog", file.TopFolder!.FullPath)),
                         },
-
-                        new MenuItemViewModel("SynthGhdlToVerilog")
+                        new MenuItemModel("SynthGhdlToDot")
                         {
                             Header = "Convert to Dot Netlist",
-                            Command = new AsyncRelayCommand(() => ghdlService.SynthAsync(file, "dot", file.TopFolder!.FullPath)),
+                            Command = new AsyncRelayCommand(() =>
+                                ghdlService.SynthAsync(file.FullPath, "dot", file.TopFolder!.FullPath)),
                         }
                     ]
                 });
             }
         });
-        
-        serviceProvider.Resolve<IProjectSettingsService>().AddProjectSetting("GHDL_Libraries", new ListBoxSetting("GHDL libraries", []), 
-            file =>
+
+        serviceProvider.Resolve<IProjectSettingsService>().AddProjectSetting(new ProjectSettingBuilder()
+            .WithKey("GHDL_Libraries")
+            .WithActivation(file =>
             {
                 if (file is UniversalFpgaProjectRoot root)
                 {
-                    return root.Files.Exists(projectFile => projectFile.Extension == ".vhd" || projectFile.Extension == ".vhdl");
+                    return root.GetFiles().Any(x => Path.GetExtension(x) is ".vhd" or ".vhdl");
                 }
                 else
                 {
                     return false;
                 }
-            });
-        
+            })
+            .WithSetting(new ListBoxSetting("GHDL libraries", [])).Build());
+
         serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
         {
-            if (list[0] is IProjectFile {Extension: ".vhd" or ".vhdl", Root: UniversalFpgaProjectRoot root } file)
+            if (list[0] is IProjectFile { Extension: ".vhd" or ".vhdl", Root: UniversalFpgaProjectRoot root } file)
             {
                 string associatedLibrary = "";
-                
-                IEnumerable<string>? libs = root.GetProjectPropertyArray("GHDL_Libraries");
+
+                IEnumerable<string>? libs = root.Properties.GetStringArray("GHDL_Libraries");
 
                 if (libs is null)
                 {
                     return;
                 }
-                
+
                 foreach (string libname in libs)
                 {
-                    IEnumerable<string>? libfiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
+                    IEnumerable<string>? libfiles = root.Properties.GetStringArray($"GHDL-LIB_{libname}");
 
                     if (libfiles is null || !libfiles.Any())
                     {
@@ -360,18 +370,18 @@ public class GhdlExtensionModule : OneWareModuleBase
 
                 if (associatedLibrary.Length == 0)
                 {
-                    ObservableCollection<MenuItemViewModel>? items = new ObservableCollection<MenuItemViewModel>();
+                    ObservableCollection<MenuItemModel>? items = new ObservableCollection<MenuItemModel>();
 
                     foreach (string lib in libs)
                     {
-                        items.Add(new MenuItemViewModel($"GHDL_Library_{lib}")
+                        items.Add(new MenuItemModel($"GHDL_Library_{lib}")
                         {
                             Header = lib,
                             Command = new AsyncRelayCommand(() => AddFileToLibraryAsync(lib, file))
                         });
                     }
 
-                    models.Add(new MenuItemViewModel("GHDL_Library_Add")
+                    models.Add(new MenuItemModel("GHDL_Library_Add")
                     {
                         Header = "Add to library",
                         Items = items
@@ -379,7 +389,7 @@ public class GhdlExtensionModule : OneWareModuleBase
                 }
                 else
                 {
-                    models.Add(new MenuItemViewModel("GHDL_Library_Remove")
+                    models.Add(new MenuItemModel("GHDL_Library_Remove")
                     {
                         Header = $"Remove from library {associatedLibrary}",
                         Command = new AsyncRelayCommand(() => RemoveFileFromLibraryAsync(associatedLibrary, file))
@@ -387,45 +397,45 @@ public class GhdlExtensionModule : OneWareModuleBase
                 }
             }
         }));
-        
+
         serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
         {
-            if (list[0] is IProjectFolder { Root: UniversalFpgaProjectRoot root } folder && folder.Children.Any(x => x is IProjectFile file))
+            if (list[0] is IProjectFolder { Root: UniversalFpgaProjectRoot root } folder &&
+                folder.Children.Any(x => x is IProjectFile file))
             {
-                IEnumerable<string>? libs = root.GetProjectPropertyArray("GHDL_Libraries");
+                IEnumerable<string>? libs = root.Properties.GetStringArray("GHDL_Libraries");
 
                 if (libs is null)
                 {
                     return;
                 }
-                
-                ObservableCollection<MenuItemViewModel>? items = new ObservableCollection<MenuItemViewModel>();
+
+                ObservableCollection<MenuItemModel>? items = new ObservableCollection<MenuItemModel>();
 
                 foreach (string lib in libs)
                 {
-                    items.Add(new MenuItemViewModel($"GHDL_Library_{lib}")
+                    items.Add(new MenuItemModel($"GHDL_Library_{lib}")
                     {
                         Header = lib,
                         Command = new AsyncRelayCommand(() => AddFolderToLibraryAsync(lib, folder))
                     });
                 }
-                
-                models.Add(new MenuItemViewModel("GHDL_Folder_Add")
+
+                models.Add(new MenuItemModel("GHDL_Folder_Add")
                 {
                     Header = "Add files in folder to library",
                     Items = items
                 });
             }
-        } ));
-        
+        }));
+
         serviceProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
-        
+
         _projectExplorerService = serviceProvider.Resolve<IProjectExplorerService>();
-        
+
         serviceProvider.Resolve<FpgaService>().RegisterToolchain<GhdlYosysToolchain>();
-        
-        
-        
+
+
         serviceProvider.Resolve<IWindowService>().RegisterUiExtension("CompileWindow_TopRightExtension",
             new OneWareUiExtension(x =>
             {
@@ -441,87 +451,84 @@ public class GhdlExtensionModule : OneWareModuleBase
 
         var ghdlPreCompiler = serviceProvider.Resolve<GhdlVhdlToVerilogPreCompileStep>();
         serviceProvider.Resolve<IWindowService>().RegisterUiExtension("UniversalFpgaToolBar_CompileMenuExtension",
-            new OneWareUiExtension(
-                x =>
+            new OneWareUiExtension(x =>
+            {
+                if (x is not UniversalFpgaProjectRoot { Toolchain: GhdlYosysToolchain.ToolchainId } root) return null;
+
+                var name = root.Properties["Fpga"]?.ToString();
+                var fpgaPackage = fpgaService.FpgaPackages.FirstOrDefault(obj => obj.Name == name);
+                var fpga = fpgaPackage?.LoadFpga();
+
+                return new StackPanel()
                 {
-                    if (x is not UniversalFpgaProjectRoot { Toolchain: GhdlYosysToolchain } root) return null;
-
-                    var name = root.Properties["Fpga"]?.ToString();
-                    var fpgaPackage = fpgaService.FpgaPackages.FirstOrDefault(obj => obj.Name == name);
-                    var fpga = fpgaPackage?.LoadFpga();
-                    
-                    return new StackPanel()
+                    Orientation = Orientation.Vertical,
+                    Children =
                     {
-                        Orientation = Orientation.Vertical,
-                        Children =
+                        new MenuItem()
                         {
-                            new MenuItem()
+                            Header = "Run Synthesis",
+                            Command = new AsyncRelayCommand(async () =>
                             {
-                                Header = "Run Synthesis",
-                                Command = new AsyncRelayCommand(async () =>
-                                {
-                                    await projectExplorerService.SaveOpenFilesForProjectAsync(root);
-                                    await ghdlToolchainService.SynthAsync(root, new FpgaModel(fpga!));
-                                    
-                                }, () => fpga != null)
+                                await projectExplorerService.SaveOpenFilesForProjectAsync(root);
+                                await ghdlToolchainService.SynthAsync(root, new FpgaModel(fpga!));
+                            }, () => fpga != null)
+                        },
+                        new MenuItem()
+                        {
+                            Header = "Run Fit",
+                            Command = new AsyncRelayCommand(async () =>
+                            {
+                                await projectExplorerService.SaveOpenFilesForProjectAsync(root);
+                                await ghdlToolchainService.FitAsync(root, new FpgaModel(fpga!));
+                            }, () => fpga != null)
+                        },
+                        new MenuItem()
+                        {
+                            Header = "Run Assemble",
+                            Command = new AsyncRelayCommand(async () =>
+                            {
+                                await projectExplorerService.SaveOpenFilesForProjectAsync(root);
+                                await ghdlToolchainService.AssembleAsync(root, new FpgaModel(fpga!));
+                            }, () => fpga != null)
+                        },
+                        new Separator(),
+                        new MenuItem()
+                        {
+                            Header = "Yosys Settings",
+                            Icon = new Image()
+                            {
+                                Source = Application.Current!.FindResource(
+                                    Application.Current!.RequestedThemeVariant,
+                                    "Material.SettingsOutline") as IImage
                             },
-                            new MenuItem()
+                            Command = new AsyncRelayCommand(async () =>
                             {
-                                Header = "Run Fit",
-                                Command = new AsyncRelayCommand(async () =>
+                                if (projectExplorerService
+                                        .ActiveProject is UniversalFpgaProjectRoot fpgaProjectRoot)
                                 {
-                                    await projectExplorerService.SaveOpenFilesForProjectAsync(root);
-                                    await ghdlToolchainService.FitAsync(root, new FpgaModel(fpga!));
-                                }, () => fpga != null)
-                            },
-                            new MenuItem()
-                            {
-                                Header = "Run Assemble",
-                                Command = new AsyncRelayCommand(async () =>
-                                {
-                                    await projectExplorerService.SaveOpenFilesForProjectAsync(root);
-                                    await ghdlToolchainService.AssembleAsync(root, new FpgaModel(fpga!));
-                                }, () => fpga != null)
-                            },
-                            new Separator(),
-                            new MenuItem()
-                            {
-                                Header = "Yosys Settings",
-                                Icon = new Image()
-                                {
-                                    Source = Application.Current!.FindResource(
-                                        Application.Current!.RequestedThemeVariant,
-                                        "Material.SettingsOutline") as IImage
-                                },
-                                Command = new AsyncRelayCommand(async () =>
-                                {
-                                    if (projectExplorerService
-                                            .ActiveProject is UniversalFpgaProjectRoot fpgaProjectRoot)
+                                    var selectedFpga = root.Properties["Fpga"]?.ToString();
+                                    var selectedFpgaPackage =
+                                        fpgaService.FpgaPackages.FirstOrDefault(obj => obj.Name == selectedFpga);
+
+                                    if (selectedFpgaPackage == null)
                                     {
-                                        var selectedFpga = root.Properties["Fpga"]?.ToString();
-                                        var selectedFpgaPackage =
-                                            fpgaService.FpgaPackages.FirstOrDefault(obj => obj.Name == selectedFpga);
-
-                                        if (selectedFpgaPackage == null)
-                                        {
-                                            serviceProvider.Resolve<ILogger>()
-                                                .Warning("No FPGA Selected. Open Pin Planner first!");
-                                            return;
-                                        }
-
-                                        await windowService.ShowDialogAsync(
-                                            new YosysCompileSettingsView
-                                            {
-                                                DataContext = new YosysCompileSettingsViewModel(fpgaProjectRoot,
-                                                    selectedFpgaPackage.LoadFpga())
-                                            });
+                                        serviceProvider.Resolve<ILogger>()
+                                            .Warning("No FPGA Selected. Open Pin Planner first!");
+                                        return;
                                     }
-                                })
-                            }
-                        }
-                    };
-                }));
 
+                                    await windowService.ShowDialogAsync(
+                                        new YosysCompileSettingsView
+                                        {
+                                            DataContext = new YosysCompileSettingsViewModel(fpgaProjectRoot,
+                                                selectedFpgaPackage.LoadFpga())
+                                        });
+                                }
+                            })
+                        }
+                    }
+                };
+            }));
     }
 
     private async Task AddFolderToLibraryAsync(string library, IProjectFolder folder)
@@ -538,10 +545,11 @@ public class GhdlExtensionModule : OneWareModuleBase
 
     private async Task AddFileToLibraryAsync(string library, IProjectFile file)
     {
-        if (file.Root is UniversalFpgaProjectRoot root && !root.CompileExcluded.Contains(file) && !(root.GetProjectPropertyArray($"GHDL-LIB_{library}") ?? Array.Empty<string>()).Any(x => x.Equals(file.RelativePath)))
+        if (file.Root is UniversalFpgaProjectRoot root && !root.IsCompileExcluded(file.RelativePath) && !(root.Properties.GetStringArray($"GHDL-LIB_{library}") ?? []).Any(x =>
+                    x.Equals(file.RelativePath)))
         {
             // Prefix library collections with "GHDL-LIB" to reduce chance of collisions with other keys
-            root.AddToProjectPropertyArray($"GHDL-LIB_{library}", file.RelativePath.Replace('\\', '/'));
+            root.Properties.AddToStringArray($"GHDL-LIB_{library}", file.RelativePath.ToUnixPath());
 
             // Save project so that the modifications are stored to disk
             // Use the UI Thread to prevent file access violations
@@ -553,13 +561,13 @@ public class GhdlExtensionModule : OneWareModuleBase
     {
         if (file.Root is UniversalFpgaProjectRoot root)
         {
-            root.SetProjectPropertyArray($"GHDL-LIB_{library}",
-                root.GetProjectPropertyArray($"GHDL-LIB_{library}")!.Where(x => !x.Equals(file.RelativePath.Replace('\\', '/')))
-                    .ToArray());
-            
+            root.Properties.SetNode($"GHDL-LIB_{library}", JsonValue.Create(
+                    root.Properties.GetStringArray($"GHDL-LIB_{library}")!
+                        .Where(x => !x.Equals(file.RelativePath.Replace('\\', '/')))
+                        .ToArray()));
+
             // Save project so that the modifications are stored to disk
             await _projectExplorerService?.SaveProjectAsync(root)!;
         }
-        
     }
 }

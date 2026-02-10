@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using OneWare.Essentials.Models;
+using OneWare.Essentials.Services;
 using OneWare.UniversalFpgaProjectSystem.Context;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
@@ -23,20 +24,20 @@ public class GhdlSimulatorToolbarViewModel(TestBenchContext context, IFpgaSimula
     public string[] AvailableVhdlStandards => ["87", "93", "93c", "00", "02", "08", "19"];
     public string VhdlStandard
     {
-        get {
-            if (context.File is IProjectFile testbenchfile && testbenchfile.Root is UniversalFpgaProjectRoot root)
+        get
+        {
+            if (ContainerLocator.Container.Resolve<IProjectExplorerService>().GetRootFromFile(context.FilePath) is UniversalFpgaProjectRoot root)
             {
-                
-                return root.GetProjectProperty("VHDL_Standard") ?? context.GetBenchProperty(nameof(VhdlStandard)) ?? "93c";
+                return root.Properties.GetString("vhdlStandard") ?? context.GetBenchProperty(nameof(VhdlStandard)) ?? "93c";
             }
             
             return context.GetBenchProperty(nameof(VhdlStandard)) ?? "93c";
         }
         set
         {
-            if (context.File is IProjectFile testbenchfile && testbenchfile.Root is UniversalFpgaProjectRoot root)
+            if (ContainerLocator.Container.Resolve<IProjectExplorerService>().GetRootFromFile(context.FilePath) is UniversalFpgaProjectRoot root)
             {
-                root.SetProjectProperty("VHDL_Standard", value);
+                root.Properties.SetString("vhdlStandard", value);
             }
             
             context.SetBenchProperty(nameof(VhdlStandard), value);

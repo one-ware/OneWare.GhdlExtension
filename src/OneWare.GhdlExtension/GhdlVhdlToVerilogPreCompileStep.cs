@@ -23,10 +23,10 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
             var ghdlOutputPath = Path.Combine(buildPath, GhdlOutputDir);
             if(Directory.Exists(ghdlOutputPath)) Directory.Delete(ghdlOutputPath, true);
             Directory.CreateDirectory(ghdlOutputPath);
-            
 
-            var vhdlFile = project.Files.First(x => x == project.TopEntity);
-            VerilogFileName = Path.GetFileNameWithoutExtension(vhdlFile.FullPath)+".v";
+
+            var vhdlFile = Path.Combine(project.RootFolderPath, project.TopEntity ?? "");
+            VerilogFileName = Path.GetFileNameWithoutExtension(vhdlFile)+".v";
             
             var success = await ghdlService.SynthAsync(vhdlFile, "verilog", ghdlOutputPath);
             return success;

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using DynamicData.Binding;
 using Microsoft.Extensions.Logging;
 using OneWare.Essentials.Enums;
+using OneWare.Essentials.Extensions;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager.Compatibility;
 using OneWare.Essentials.Services;
@@ -32,8 +33,9 @@ public class GhdlService
 
     private string _path = string.Empty;
 
-    public GhdlService(ILogger logger, IMainDockService dockService, ISettingsService settingsService, 
-        IPackageService packageService, IChildProcessService childProcessService, IEnvironmentService environmentService,
+    public GhdlService(ILogger logger, IMainDockService dockService, ISettingsService settingsService,
+        IPackageService packageService, IChildProcessService childProcessService,
+        IEnvironmentService environmentService,
         IOutputService outputService, IProjectExplorerService projectExplorerService)
     {
         _logger = logger;
@@ -52,13 +54,13 @@ public class GhdlService
         });
 
         SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync,
-            () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
+            () => Path.GetExtension(_dockService.CurrentDocument?.FullPath) is ".vhd" or ".vhdl");
 
         SynthToDotCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("dot"),
-            () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
+            () => Path.GetExtension(_dockService.CurrentDocument?.FullPath) is ".vhd" or ".vhdl");
 
         SynthToVerilogCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("verilog"),
-            () => _dockService.CurrentDocument?.CurrentFile?.Extension is ".vhd" or ".vhdl");
+            () => Path.GetExtension(_dockService.CurrentDocument?.FullPath) is ".vhd" or ".vhdl");
 
         _dockService.WhenValueChanged(x => x.CurrentDocument).Subscribe(x =>
         {
@@ -66,20 +68,26 @@ public class GhdlService
         });
     }
 
-    private async Task<(bool success, string stdout, string stderr)> ExecuteGhdlAsync(IReadOnlyCollection<string> arguments, string workingDirectory, string status,
+    private async Task<(bool success, string stdout, string stderr)> ExecuteGhdlAsync(
+        IReadOnlyCollection<string> arguments, string workingDirectory, string status,
         AppState state = AppState.Loading, bool showTimer = false)
     {
-        if (!File.Exists(_path) || (_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries") && 
-                                    _packageService.Packages.GetValueOrDefault(GhdlExtensionModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing}))
+        if (!File.Exists(_path) || (_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries") &&
+                                    _packageService.Packages.GetValueOrDefault(GhdlExtensionModule.GhdlPackage.Id!) is
+                                    {
+                                        Status: PackageStatus.Available or PackageStatus.UpdateAvailable
+                                        or PackageStatus.Installing
+                                    }))
         {
             var install = await InstallGhdlAsync();
             if (!install)
             {
-                _logger.Warning("GHDL not found. Please set the path in the settings or (re)install it from the package manager.");
-                return (false,string.Empty, string.Empty);
+                _logger.Warning(
+                    "GHDL not found. Please set the path in the settings or (re)install it from the package manager.");
+                return (false, string.Empty, string.Empty);
             }
         }
-        
+
         StringBuilder stdoutBuilder = new StringBuilder();
         StringBuilder stderrBuilder = new StringBuilder();
 
@@ -102,21 +110,27 @@ public class GhdlService
                     _logger.Error(x);
                     return false;
                 }
-                
+
                 _logger.Warning(x);
                 stderrBuilder.AppendLine(x);
                 return true;
             });
-        
+
         return (success, stdoutBuilder.ToString(), stderrBuilder.ToString());
     }
 
     private async Task<bool> InstallGhdlAsync()
     {
-        if (_packageService.Packages.GetValueOrDefault(GhdlExtensionModule.GhdlPackage.Id!) is {Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing})
+        if (_packageService.Packages.GetValueOrDefault(GhdlExtensionModule.GhdlPackage.Id!) is
+            {
+                Status: PackageStatus.Available or PackageStatus.UpdateAvailable or PackageStatus.Installing
+            })
         {
             if (!_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries")) return false;
-            if(await _packageService.InstallAsync(GhdlExtensionModule.GhdlPackage) is {Status: PackageInstallResultReason.Installed or PackageInstallResultReason.AlreadyInstalled}) return false;
+            if (await _packageService.InstallAsync(GhdlExtensionModule.GhdlPackage) is
+                {
+                    Status: PackageInstallResultReason.Installed or PackageInstallResultReason.AlreadyInstalled
+                }) return false;
             SetEnvironment();
             return true;
         }
@@ -129,35 +143,34 @@ public class GhdlService
         if (File.Exists(_path))
         {
             _environmentService.SetPath("GHDL_PATH", Path.GetDirectoryName(_path));
-            _environmentService.SetEnvironmentVariable("GHDL_PREFIX", Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_path))!, "lib", $"ghdl"));
+            _environmentService.SetEnvironmentVariable("GHDL_PREFIX",
+                Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(_path))!, "lib", $"ghdl"));
         }
     }
 
     private Task SynthCurrentFileAsync(string output)
     {
-        if (_dockService.CurrentDocument?.CurrentFile is IProjectFile selectedFile)
-            return SynthAsync(selectedFile, output, selectedFile.TopFolder!.FullPath);
+        if (_dockService.CurrentDocument?.FullPath is { } fullPath)
+            return SynthAsync(fullPath, output, Path.GetDirectoryName(fullPath));
         return Task.CompletedTask;
     }
 
-    private async Task<bool> ElaborateAsync(IProjectFile file, TestBenchContext context)
+    private async Task<bool> ElaborateAsync(string fullPath, TestBenchContext context)
     {
-        if(file.Root is not UniversalFpgaProjectRoot root) return false;
+        if (_projectExplorerService.GetRootFromFile(fullPath) is not UniversalFpgaProjectRoot root) return false;
 
         IEnumerable<string> libfiles = GetAllLibraryFiles(root);
 
-        IEnumerable<string>? libnames = root.GetProjectPropertyArray("GHDL_Libraries");
-        
-        var vhdlFiles = root.Files
-            .Where(x => !root.CompileExcluded.Contains(x))
-            .Where(x => !libfiles.Contains(x.RelativePath))
-            .Where(x => x.Extension is ".vhd" or ".vhdl")
-            .Select(x => x.RelativePath);
+        IEnumerable<string>? libnames = root.Properties.GetStringArray("GHDL_Libraries");
 
-        var top = Path.GetFileNameWithoutExtension(file.FullPath);
-        var workingDirectory = file.Root!.FullPath;
+        var vhdlFiles = root.GetFiles("*.vhd").Concat(root.GetFiles("*.vhdl"))
+            .Where(x => !root.IsCompileExcluded(x))
+            .Where(x => !libfiles.Contains(x));
+
+        var top = Path.GetFileNameWithoutExtension(fullPath);
+        var workingDirectory = root.FullPath;
         var buildDirectory = Path.Combine(workingDirectory, "build");
-        
+
         // Ensure existence of build directory
         if (!Directory.Exists(buildDirectory))
         {
@@ -174,19 +187,21 @@ public class GhdlService
         }
 
         List<string> ghdlOptions = [];
-        
+
         ghdlOptions.Add($"--workdir={buildDirectory}");
         ghdlOptions.Add($"-P{buildDirectory}");
-        
-        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ?? root.GetProjectProperty("VHDL_Standard");
+
+        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ??
+                           root.Properties.GetString("vhdlStandard");
         if (vhdlStandard != null)
         {
             ghdlOptions.Add($"--std={vhdlStandard}");
         }
-    
-        var additionalGhdlOptions = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
-        if(additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
-        
+
+        var additionalGhdlOptions =
+            context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
+        if (additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
+
         List<string> ghdlInitArguments = ["-i"];
         ghdlInitArguments.AddRange(ghdlOptions);
         ghdlInitArguments.AddRange(vhdlFiles);
@@ -203,13 +218,13 @@ public class GhdlService
             "GHDL Init...",
             AppState.Loading, true);
         if (!initFiles.success) return false;
-        
+
         if (libnames is not null)
         {
             foreach (string libname in libnames)
             {
                 bool success = await ImportLibraryAsync(root, context, libname, workingDirectory, ghdlOptions);
-                
+
                 if (!success)
                 {
                     return false;
@@ -220,7 +235,7 @@ public class GhdlService
         var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
             "Running GHDL Make...", AppState.Loading, true);
         if (!make.success) return false;
-        
+
         if (libnames is not null)
         {
             foreach (string libname in libnames)
@@ -245,32 +260,30 @@ public class GhdlService
         string workingDirectory, List<string> ghdlOptions)
     {
         string buildDirectory = Path.Combine(workingDirectory, "build");
-        
+
         // Get files contained in library
-        IEnumerable<string>? libraryFiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
+        IEnumerable<string>? libraryFiles = root.Properties.GetStringArray($"GHDL-LIB_{libname}");
 
         if (libraryFiles is null)
         {
             _logger.Warning($"Library {libname} is empty");
-            
+
             return true;
         }
-        
-        IEnumerable<string> vhdlFiles = root.Files
-            .Where(x => !root.CompileExcluded.Contains(x))
-            .Where(x => x.Extension is ".vhd" or ".vhdl")
-            .Where(x => libraryFiles.Contains(x.RelativePath.Replace('\\', '/')))
-            .Select(x => x.RelativePath);
-        
+
+        IEnumerable<string> vhdlFiles = root.GetFiles("*.vhd").Concat(root.GetFiles("*.vhdl"))
+            .Where(x => !root.IsCompileExcluded(x))
+            .Where(x => libraryFiles.Contains(x.ToUnixPath()));
+
         List<string> ghdlInitArguments = ["-i"];
         ghdlInitArguments.AddRange(ghdlOptions);
         ghdlInitArguments.Add($"--work={libname}");
         ghdlInitArguments.AddRange(vhdlFiles);
-        
+
         var initFiles = await ExecuteGhdlAsync(ghdlInitArguments, workingDirectory,
             $"GHDL Init for library {libname}...",
             AppState.Loading, true);
-        
+
         return initFiles.success;
     }
 
@@ -278,21 +291,21 @@ public class GhdlService
         string workingDirectory, List<string> ghdlOptions)
     {
         string buildDirectory = Path.Combine(workingDirectory, "build");
-        
-        string? top = Path.GetFileNameWithoutExtension(root.TopEntity?.FullPath);
 
-        if (top is null)
+        if (root.TopEntity == null)
         {
             _logger.Error("No toplevel entity has been set");
-            
+
             return false;
         }
-        
+
+        string top = Path.Combine(root.RootFolderPath, root.TopEntity);
+
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
         ghdlMakeArguments.Add($"--work={libname}");
         ghdlMakeArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
-        
+
         var make = await ExecuteGhdlAsync(ghdlMakeArguments, workingDirectory,
             $"Running GHDL Make for library {libname}...", AppState.Loading, true);
         return make.success;
@@ -300,7 +313,7 @@ public class GhdlService
 
     private IEnumerable<string> GetAllLibraryFiles(UniversalFpgaProjectRoot root)
     {
-        IEnumerable<string>? libnames = root.GetProjectPropertyArray("GHDL_Libraries");
+        IEnumerable<string>? libnames = root.Properties.GetStringArray("GHDL_Libraries")?.ToArray();
 
         if (libnames is null || !libnames.Any())
         {
@@ -308,92 +321,94 @@ public class GhdlService
         }
 
         var ret = new List<string>();
-        
+
         foreach (string lib in libnames)
         {
-            IEnumerable<string>? libfiles = root.GetProjectPropertyArray($"GHDL-LIB_{lib}");
+            IEnumerable<string>? libfiles = root.Properties.GetStringArray($"GHDL-LIB_{lib}")?.ToArray();
 
             if (libfiles is null || !libfiles.Any())
             {
                 _logger.Warning($"Library {lib} is empty");
-                
+
                 continue;
             }
-            
+
             foreach (string file in libfiles)
             {
                 ret.Add(file);
             }
         }
-        
+
         return ret;
     }
 
     private string GetLibraryPrefixForToplevel(UniversalFpgaProjectRoot root)
     {
-        IEnumerable<string>? libnames = root.GetProjectPropertyArray("GHDL_Libraries");
+        IEnumerable<string>? libnames = root.Properties.GetStringArray("GHDL_Libraries");
 
         if (libnames is null)
         {
             return "";
         }
-        
-        string? top = root.TopEntity?.RelativePath;
 
-        if (top is null)
+        if (root.TopEntity == null)
         {
             _logger.Error("No toplevel entity has been set");
-            
+
             return "";
         }
 
+        string top = Path.Combine(root.RootFolderPath, root.TopEntity);
+
         foreach (string libname in libnames)
         {
-            IEnumerable<string>? libfiles = root.GetProjectPropertyArray($"GHDL-LIB_{libname}");
+            IEnumerable<string>? libfiles = root.Properties.GetStringArray($"GHDL-LIB_{libname}")?.ToArray();
 
             if (libfiles is null || !libfiles.Any())
             {
                 continue;
             }
-            
+
             if (libfiles.Contains(top))
             {
                 return $"{libname}.";
             }
         }
-        
+
         return "";
     }
 
-    public async Task<bool> SynthAsync(IProjectFile file, string outputType, string outputDirectory)
+    public async Task<bool> SynthAsync(string fullPath, string outputType, string outputDirectory)
     {
-        if (file.Root is UniversalFpgaProjectRoot root)
+        if (_projectExplorerService.GetRootFromFile(fullPath) is UniversalFpgaProjectRoot root)
         {
             IPackageState? ghdlPackagemodel = _packageService.Packages.GetValueOrDefault("ghdl");
             Version ghdlVersion = new Version(5, 0, 1);
             bool directVerilogOutput = (ghdlPackagemodel is not null &&
-                 ghdlVersion.CompareTo(Version.Parse(ghdlPackagemodel.InstalledVersion!.Version!)) <= 0 && outputType.Equals("verilog"));
-            
+                                        ghdlVersion.CompareTo(
+                                            Version.Parse(ghdlPackagemodel.InstalledVersion!.Version!)) <= 0 &&
+                                        outputType.Equals("verilog"));
+
             _dockService.Show<IOutputService>();
 
-            var settings = await TestBenchContextManager.LoadContextAsync(file);
+            var settings = await TestBenchContextManager.LoadContextAsync(fullPath);
 
-            var top = Path.GetFileNameWithoutExtension(file.FullPath);
+            var top = Path.GetFileNameWithoutExtension(fullPath);
             var workingDirectory = root.FullPath;
             string buildDirectory = Path.Combine(workingDirectory, "build");
 
-            var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? "93c";
+            var vhdlStandard = root.Properties.GetString("vhdlStandard") ?? "93c";
             List<string> ghdlOptions = [$"--std={vhdlStandard}"];
             ghdlOptions.Add($"--workdir={buildDirectory}");
             ghdlOptions.Add($"-P{buildDirectory}");
 
-            var elaborateResult = await ElaborateAsync(file, settings);
+            var elaborateResult = await ElaborateAsync(fullPath, settings);
             if (!elaborateResult) return false;
 
             List<string> ghdlSynthArguments = ["--synth"];
             ghdlSynthArguments.AddRange(ghdlOptions);
             ghdlSynthArguments.Add($"--out={outputType}");
-            
+
             var extension = outputType switch
             {
                 "dot" => ".dot",
@@ -403,9 +418,10 @@ public class GhdlService
 
             if (directVerilogOutput)
             {
-                ghdlSynthArguments.Add($"-o={Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath))}{extension}");
+                ghdlSynthArguments.Add(
+                    $"-o={Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(fullPath))}{extension}");
             }
-            
+
             ghdlSynthArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
 
             var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
@@ -415,7 +431,7 @@ public class GhdlService
             if (!directVerilogOutput)
             {
                 await File.WriteAllTextAsync(
-                    Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(file.FullPath) + extension),
+                    Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(fullPath) + extension),
                     synth.stdout);
             }
 
@@ -427,20 +443,21 @@ public class GhdlService
 
     private Task SimulateCurrentFileAsync()
     {
-        if (_dockService.CurrentDocument?.CurrentFile is IProjectFile selectedFile)
-            return SimulateFileAsync(selectedFile);
+        if (_dockService.CurrentDocument != null)
+            return SimulateFileAsync(_dockService.CurrentDocument.FullPath);
         return Task.CompletedTask;
     }
 
-    public async Task<bool> SimulateFileAsync(IProjectFile file)
+    public async Task<bool> SimulateFileAsync(string fullPath)
     {
-        if (file.Root is UniversalFpgaProjectRoot root)
+        if (_projectExplorerService.GetRootFromFile(fullPath) is UniversalFpgaProjectRoot root)
         {
             _dockService.Show<IOutputService>();
+            var relativePath = Path.GetRelativePath(root.RootFolderPath, fullPath);
 
-            var settings = await TestBenchContextManager.LoadContextAsync(file);
+            var settings = await TestBenchContextManager.LoadContextAsync(fullPath);
 
-            var top = Path.GetFileNameWithoutExtension(file.FullPath);
+            var top = Path.GetFileNameWithoutExtension(fullPath);
             var workingDirectory = root.FullPath;
             string buildDirectory = Path.Combine(workingDirectory, "build");
             List<string> ghdlOptions = [];
@@ -458,10 +475,10 @@ public class GhdlService
                 "FST" => "fst",
                 _ => string.Empty
             };
-            
+
             await AddSimFileExtensionToIncludesAsync(root, waveOutput);
 
-            var waveFilePath = Path.Combine(file.TopFolder!.RelativePath, $"{top}.{waveOutput.ToLower()}");
+            var waveFilePath = Path.Combine(Path.GetDirectoryName(relativePath)!, $"{top}.{waveOutput.ToLower()}");
             var waveFormFileArgument = $"--{waveOutputArgument}={waveFilePath}";
 
             var additionalGhdlOptions =
@@ -472,7 +489,8 @@ public class GhdlService
                 settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlSimOptions));
             if (additionalGhdlSimOptions != null) simulatingOptions.AddRange(additionalGhdlSimOptions.Split(' '));
 
-            var vhdlStandard = root.GetProjectProperty("VHDL_Standard") ?? settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+            var vhdlStandard = root.Properties.GetString("vhdlStandard") ??
+                               settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
             if (vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
 
             var assertLevel = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AssertLevel));
@@ -481,21 +499,17 @@ public class GhdlService
             var stopTime = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.SimulationStopTime));
             if (stopTime != null) simulatingOptions.Add($"--stop-time={stopTime}");
 
-            var elaborateResult = await ElaborateAsync(file, settings);
+            var elaborateResult = await ElaborateAsync(fullPath, settings);
             if (!elaborateResult) return false;
 
-            if (file.Root.SearchRelativePath(waveFilePath) is not IFile waveFormFile)
-            {
-                waveFormFile =
-                    _projectExplorerService.GetTemporaryFile(Path.Combine(file.Root.RootFolderPath, waveFilePath));
-            }
+            var waveFormFullPath = Path.Combine(root.RootFolderPath, waveFilePath);
 
             //Open VCD inside IDE and prepare to stream
             if (waveOutput == "VCD")
             {
-                if (!File.Exists(waveFormFile.FullPath)) await File.Create(waveFormFile.FullPath).DisposeAsync();
+                if (!File.Exists(waveFormFullPath)) await File.Create(waveFormFullPath).DisposeAsync();
 
-                var doc = await _dockService.OpenFileAsync(waveFormFile);
+                var doc = await _dockService.OpenFileAsync(waveFormFullPath);
 
                 // ReSharper disable once SuspiciousTypeConversion.Global
                 if (doc is IStreamableDocument vcd)
@@ -515,7 +529,7 @@ public class GhdlService
 
             if (run.success && waveOutput is "GHW" or "FST")
             {
-                _ = await _dockService.OpenFileAsync(waveFormFile);
+                _ = await _dockService.OpenFileAsync(waveFormFullPath);
             }
 
             return run.success;
@@ -539,7 +553,7 @@ public class GhdlService
             return;
         }
 
-        var includedFileTypes = root.GetProjectPropertyArray("Include");
+        var includedFileTypes = root.Properties.GetString("include");
 
         if (includedFileTypes is null)
         {
@@ -550,8 +564,8 @@ public class GhdlService
         {
             return;
         }
-        
-        root.AddToProjectPropertyArray("Include", $"*.{actualExtension}");
+
+        root.Properties.AddToStringArray("include", $"*.{actualExtension}");
 
         await _projectExplorerService.SaveProjectAsync(root);
     }
