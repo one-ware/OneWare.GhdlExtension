@@ -15,5 +15,6 @@ public class GhdlYosysToolchain(GhdlToolchainService ghdlToolchainService, Yosys
         return await ghdlToolchainService.CompileAsync(project, fpga);
     }
 
+    public override string Id => ToolchainId;
     public override string Name => "GHDL_Yosys";
 }
