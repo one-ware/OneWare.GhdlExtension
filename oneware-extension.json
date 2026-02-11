@@ -122,9 +122,9 @@
       ]
     },
     {
-      "version": "0.99.9",
+      "version": "1.0.0",
       "isPrerelease": true,
-      "minStudioVersion": "0.99.9",
+      "minStudioVersion": "1.0.0",
       "targets": [
         {
           "target": "all"
