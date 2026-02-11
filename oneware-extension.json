@@ -123,7 +123,6 @@
     },
     {
       "version": "1.0.0",
-      "isPrerelease": true,
       "minStudioVersion": "1.0.0",
       "targets": [
         {
