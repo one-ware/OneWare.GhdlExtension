@@ -129,7 +129,7 @@ public class GhdlService
             if (!_settingsService.GetSettingValue<bool>("Experimental_AutoDownloadBinaries")) return false;
             if (await _packageService.InstallAsync(GhdlExtensionModule.GhdlPackage) is
                 {
-                    Status: PackageInstallResultReason.Installed or PackageInstallResultReason.AlreadyInstalled
+                    Status: not (PackageInstallResultReason.Installed or PackageInstallResultReason.AlreadyInstalled)
                 }) return false;
             SetEnvironment();
             return true;
