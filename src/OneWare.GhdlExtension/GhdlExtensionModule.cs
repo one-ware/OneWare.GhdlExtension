@@ -221,7 +221,7 @@ public class GhdlExtensionModule : OneWareModuleBase
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "ghdl-mcode-5.0.1-ubuntu24.04-x86_64/bin/ghdl",
+                                RelativePath = "ghdl-mcode-5.1.1-ubuntu24.04-x86_64/bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
@@ -235,7 +235,7 @@ public class GhdlExtensionModule : OneWareModuleBase
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "ghdl-mcode-5.0.1-macos13-x86_64/bin/ghdl",
+                                RelativePath = "ghdl-mcode-5.1.1-macos13-x86_64/bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
@@ -249,7 +249,7 @@ public class GhdlExtensionModule : OneWareModuleBase
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "ghdl-mcode-5.0.1-macos13-x86_64/bin/ghdl",
+                                RelativePath = "ghdl-mcode-5.1.1-macos13-x86_64/bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
