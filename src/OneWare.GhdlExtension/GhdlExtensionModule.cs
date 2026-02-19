@@ -277,7 +277,6 @@ public class GhdlExtensionModule : OneWareModuleBase
         var fpgaService = serviceProvider.Resolve<FpgaService>();
         var toolService = serviceProvider.Resolve<IToolService>();
 
-
         serviceProvider.Resolve<IPackageService>().RegisterPackage(GhdlPackage);
 
         serviceProvider.Resolve<ISettingsService>().RegisterTitledFilePath("Simulator", "GHDL", GhdlPathSetting,
