@@ -452,7 +452,7 @@ public class GhdlExtensionModule : OneWareModuleBase
             }));
 
 
-        var ghdlPreCompiler = serviceProvider.Resolve<GhdlVhdlToVerilogPreCompileStep>();
+        // var ghdlPreCompiler = serviceProvider.Resolve<GhdlVhdlToVerilogPreCompileStep>();
         serviceProvider.Resolve<IWindowService>().RegisterUiExtension("UniversalFpgaToolBar_CompileMenuExtension",
             new OneWareUiExtension(x =>
             {
