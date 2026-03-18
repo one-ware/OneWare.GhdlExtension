@@ -7,6 +7,7 @@ using OneWare.Essentials.Extensions;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager.Compatibility;
 using OneWare.Essentials.Services;
+using OneWare.Essentials.ToolEngine;
 using OneWare.Essentials.ViewModels;
 using OneWare.GhdlExtension.ViewModels;
 using OneWare.UniversalFpgaProjectSystem.Context;
@@ -90,7 +91,35 @@ public class GhdlService
 
         StringBuilder stdoutBuilder = new StringBuilder();
         StringBuilder stderrBuilder = new StringBuilder();
+        
+        var command = ToolCommand.FromShellParams(_path, arguments, workingDirectory,
+            status, state, showTimer, x =>
+            {
+                if (x.StartsWith("ghdl:error:"))
+                {
+                    _logger.Error(x);
+                    return false;
+                }
 
+                _outputService.WriteLine(x);
+                stdoutBuilder.AppendLine(x);
+                return true;
+            }, x =>
+            {
+                if (x.StartsWith("ghdl:error:"))
+                {
+                    _logger.Error(x);
+                    return false;
+                }
+
+                _logger.Warning(x);
+                stderrBuilder.AppendLine(x);
+                return true;
+            });
+        
+        
+
+        
         (bool success, _) = await _childProcessService.ExecuteShellAsync(_path, arguments, workingDirectory,
             status, state, showTimer, x =>
             {

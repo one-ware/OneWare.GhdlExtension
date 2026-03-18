@@ -13,6 +13,8 @@ using OneWare.Essentials.Helpers;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager;
 using OneWare.Essentials.Services;
+using OneWare.Essentials.ToolEngine;
+using OneWare.Essentials.ToolEngine.Strategies;
 using OneWare.Essentials.ViewModels;
 using OneWare.GhdlExtension.Services;
 using OneWare.GhdlExtension.ViewModels;
@@ -396,6 +398,8 @@ public class GhdlExtensionModule : OneWareModuleBase
                 }
             }
         }));
+        
+        toolService.Register(new ToolContext("ghdl", "Synth Tool", "ghdl"), new NativeStrategy());
 
         serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
         {

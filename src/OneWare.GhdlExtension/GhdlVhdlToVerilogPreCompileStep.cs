@@ -11,11 +11,13 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
     public string Name => "GHDL Vhdl to Verilog";
 
     public readonly string BuildDir = "build";
-    public readonly string GhdlOutputDir = "ghdl-output";
+    public readonly string GhdlOutputDir = "gen_verilog";
     public string? VerilogFileName;
     
     public async Task<bool> PerformPreCompileStepAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
+        if (project.TopEntity == null || !project.TopEntity.EndsWith(".vhd")) return false;
+        
         try
         {
             var buildPath = Path.Combine(project.FullPath, BuildDir);
@@ -27,7 +29,7 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
 
             var vhdlFile = Path.Combine(project.RootFolderPath, project.TopEntity ?? "");
             VerilogFileName = Path.GetFileNameWithoutExtension(vhdlFile)+".v";
-            
+                
             var success = await ghdlService.SynthAsync(vhdlFile, "verilog", ghdlOutputPath);
             return success;
         }
