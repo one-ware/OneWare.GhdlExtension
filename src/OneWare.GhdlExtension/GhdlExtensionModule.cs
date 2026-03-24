@@ -244,12 +244,12 @@ public class GhdlExtensionModule : OneWareModuleBase
                     {
                         Target = "osx-arm",
                         Url =
-                            "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-macos13-arm.tar.gz",
+                            "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-llvm-5.1.1-macos14-aarch64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "ghdl-mcode-5.1.1-macos13-x86_64/bin/ghdl",
+                                RelativePath = "ghdl-llvm-5.1.1-macos14-aarch64/bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
