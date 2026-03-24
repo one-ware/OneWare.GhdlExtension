@@ -255,6 +255,54 @@ public class GhdlExtensionModule : OneWareModuleBase
                         ]
                     }
                 ]
+            },
+            new PackageVersion()
+            {
+                Version = "6.0.0",
+                Targets =
+                [
+                    new PackageTarget()
+                    {
+                        Target = "win-x64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-mcode-6.0.0-ucrt64.zip",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "bin/ghdl.exe",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "linux-x64",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-mcode-6.0.0-ubuntu24.04-x86_64.tar.gz",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "ghdl-mcode-6.0.0-ubuntu24.04-x86_64/bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "osx-arm",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-llvm-6.0.0-macos14-aarch64.tar.gz",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "ghdl-llvm-6.0.0-macos14-aarch64/bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    }
+                ]
             }
         ]
     };
