@@ -8,7 +8,7 @@ namespace OneWare.GhdlExtension;
 
 public class GhdlYosysToolchain(GhdlToolchainService ghdlToolchainService, YosysService yosysService) : YosysToolchain(yosysService)
 {
-    public const string ToolchainId = "ghdl_yosys";
+    public const string ToolchainId = "GHDL_Yosys";
     
     public override async Task<bool> CompileAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {

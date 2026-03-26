@@ -7,6 +7,7 @@ using OneWare.Essentials.Extensions;
 using OneWare.Essentials.Models;
 using OneWare.Essentials.PackageManager.Compatibility;
 using OneWare.Essentials.Services;
+using OneWare.Essentials.ToolEngine;
 using OneWare.Essentials.ViewModels;
 using OneWare.GhdlExtension.ViewModels;
 using OneWare.UniversalFpgaProjectSystem.Context;
@@ -19,11 +20,11 @@ public class GhdlService
     private readonly ILogger _logger;
     private readonly IMainDockService _dockService;
     private readonly IPackageService _packageService;
-    private readonly IChildProcessService _childProcessService;
     private readonly IEnvironmentService _environmentService;
     private readonly IOutputService _outputService;
     private readonly ISettingsService _settingsService;
     private readonly IProjectExplorerService _projectExplorerService;
+    private readonly IToolExecutionDispatcherService _toolExecutionDispatcherService;
 
     public AsyncRelayCommand SimulateCommand { get; }
 
@@ -34,18 +35,19 @@ public class GhdlService
     private string _path = string.Empty;
 
     public GhdlService(ILogger logger, IMainDockService dockService, ISettingsService settingsService,
-        IPackageService packageService, IChildProcessService childProcessService,
+        IPackageService packageService, 
         IEnvironmentService environmentService,
-        IOutputService outputService, IProjectExplorerService projectExplorerService)
+        IOutputService outputService, IProjectExplorerService projectExplorerService,
+        IToolExecutionDispatcherService toolExecutionDispatcherService)
     {
         _logger = logger;
         _dockService = dockService;
         _packageService = packageService;
-        _childProcessService = childProcessService;
         _environmentService = environmentService;
         _outputService = outputService;
         _settingsService = settingsService;
         _projectExplorerService = projectExplorerService;
+        _toolExecutionDispatcherService = toolExecutionDispatcherService;
 
         settingsService.GetSettingObservable<string>(GhdlExtensionModule.GhdlPathSetting).Subscribe(x =>
         {
@@ -62,7 +64,7 @@ public class GhdlService
         SynthToVerilogCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("verilog"),
             () => Path.GetExtension(_dockService.CurrentDocument?.FullPath) is ".vhd" or ".vhdl");
 
-        _dockService.WhenValueChanged(x => x.CurrentDocument).Subscribe(x =>
+        _dockService.WhenValueChanged(x => x.CurrentDocument).Subscribe(_ =>
         {
             SimulateCommand.NotifyCanExecuteChanged();
         });
@@ -90,8 +92,8 @@ public class GhdlService
 
         StringBuilder stdoutBuilder = new StringBuilder();
         StringBuilder stderrBuilder = new StringBuilder();
-
-        (bool success, _) = await _childProcessService.ExecuteShellAsync(_path, arguments, workingDirectory,
+        
+        var command = ToolCommand.FromShellParams(_path, arguments, workingDirectory,
             status, state, showTimer, x =>
             {
                 if (x.StartsWith("ghdl:error:"))
@@ -116,6 +118,7 @@ public class GhdlService
                 return true;
             });
 
+        var (success, _) = await _toolExecutionDispatcherService.ExecuteAsync(command);
         return (success, stdoutBuilder.ToString(), stderrBuilder.ToString());
     }
 
@@ -151,7 +154,7 @@ public class GhdlService
     private Task SynthCurrentFileAsync(string output)
     {
         if (_dockService.CurrentDocument?.FullPath is { } fullPath)
-            return SynthAsync(fullPath, output, Path.GetDirectoryName(fullPath));
+            return SynthAsync(fullPath, output, Path.GetDirectoryName(fullPath)!);
         return Task.CompletedTask;
     }
 
@@ -159,9 +162,9 @@ public class GhdlService
     {
         if (_projectExplorerService.GetRootFromFile(fullPath) is not UniversalFpgaProjectRoot root) return false;
 
-        IEnumerable<string> libfiles = GetAllLibraryFiles(root);
+        var libfiles = GetAllLibraryFiles(root);
 
-        IEnumerable<string>? libnames = root.Properties.GetStringArray("GHDL_Libraries");
+        var libnames = root.Properties.GetStringArray("GHDL_Libraries");
 
         var vhdlFiles = root.GetFiles("*.vhd").Concat(root.GetFiles("*.vhdl"))
             .Where(x => !root.IsCompileExcluded(x))
@@ -218,12 +221,12 @@ public class GhdlService
             "GHDL Init...",
             AppState.Loading, true);
         if (!initFiles.success) return false;
-
+        
         if (libnames is not null)
         {
-            foreach (string libname in libnames)
+            foreach (var libname in libnames)
             {
-                bool success = await ImportLibraryAsync(root, context, libname, workingDirectory, ghdlOptions);
+                var success = await ImportLibraryAsync(root, context, libname, workingDirectory, ghdlOptions);
 
                 if (!success)
                 {
@@ -259,10 +262,9 @@ public class GhdlService
     private async Task<bool> ImportLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname,
         string workingDirectory, List<string> ghdlOptions)
     {
-        string buildDirectory = Path.Combine(workingDirectory, "build");
 
         // Get files contained in library
-        IEnumerable<string>? libraryFiles = root.Properties.GetStringArray($"GHDL-LIB_{libname}");
+        var libraryFiles = root.Properties.GetStringArray($"GHDL-LIB_{libname}");
 
         if (libraryFiles is null)
         {
@@ -271,7 +273,7 @@ public class GhdlService
             return true;
         }
 
-        IEnumerable<string> vhdlFiles = root.GetFiles("*.vhd").Concat(root.GetFiles("*.vhdl"))
+        var vhdlFiles = root.GetFiles("*.vhd").Concat(root.GetFiles("*.vhdl"))
             .Where(x => !root.IsCompileExcluded(x))
             .Where(x => libraryFiles.Contains(x.ToUnixPath()));
 
@@ -290,8 +292,6 @@ public class GhdlService
     private async Task<bool> MakeLibraryAsync(UniversalFpgaProjectRoot root, TestBenchContext context, string libname,
         string workingDirectory, List<string> ghdlOptions)
     {
-        string buildDirectory = Path.Combine(workingDirectory, "build");
-
         if (root.TopEntity == null)
         {
             _logger.Error("No toplevel entity has been set");
@@ -324,7 +324,7 @@ public class GhdlService
 
         foreach (string lib in libnames)
         {
-            IEnumerable<string>? libfiles = root.Properties.GetStringArray($"GHDL-LIB_{lib}")?.ToArray();
+            var libfiles = root.Properties.GetStringArray($"GHDL-LIB_{lib}")?.ToArray();
 
             if (libfiles is null || !libfiles.Any())
             {
