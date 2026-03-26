@@ -246,12 +246,60 @@ public class GhdlExtensionModule : OneWareModuleBase
                     {
                         Target = "osx-arm",
                         Url =
-                            "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-mcode-5.1.1-macos13-arm.tar.gz",
+                            "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-llvm-5.1.1-macos14-aarch64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "ghdl-mcode-5.1.1-macos13-x86_64/bin/ghdl",
+                                RelativePath = "ghdl-llvm-5.1.1-macos14-aarch64/bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    }
+                ]
+            },
+            new PackageVersion()
+            {
+                Version = "6.0.0",
+                Targets =
+                [
+                    new PackageTarget()
+                    {
+                        Target = "win-x64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-mcode-6.0.0-ucrt64.zip",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "bin/ghdl.exe",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "linux-x64",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-mcode-6.0.0-ubuntu24.04-x86_64.tar.gz",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "ghdl-mcode-6.0.0-ubuntu24.04-x86_64/bin/ghdl",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
+                        Target = "osx-arm",
+                        Url =
+                            "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-llvm-6.0.0-macos14-aarch64.tar.gz",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "ghdl-llvm-6.0.0-macos14-aarch64/bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
