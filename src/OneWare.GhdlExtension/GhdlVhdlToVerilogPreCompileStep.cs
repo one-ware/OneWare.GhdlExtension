@@ -16,7 +16,7 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
     
     public async Task<bool> PerformPreCompileStepAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
-        if (project.TopEntity == null || !project.TopEntity.EndsWith(".vhd")) return false;
+        if (project.TopEntity == null || !project.TopEntity.EndsWith(".vhd")) return true;
         
         try
         {

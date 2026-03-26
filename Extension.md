@@ -10,4 +10,7 @@
 
 ### Use as Precompile Step to convert VHDL to Verilog
 
-> Coming soon!
+Simply select the yosys toolchain, and the VHDL code will be automatically 
+recognised and GHDL will be used. 
+However, this only works with the trial version of OneWare Studio. 
+It requires OneWare Studio version 1.0.14 or later.
