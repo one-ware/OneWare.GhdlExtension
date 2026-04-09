@@ -299,7 +299,7 @@ public class GhdlService
             return false;
         }
 
-        string top = Path.Combine(root.RootFolderPath, root.TopEntity);
+        string top = Path.GetFileNameWithoutExtension(root.TopEntity);
 
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
@@ -358,7 +358,7 @@ public class GhdlService
             return "";
         }
 
-        string top = Path.Combine(root.RootFolderPath, root.TopEntity);
+        string top = root.TopEntity;
 
         foreach (string libname in libnames)
         {
