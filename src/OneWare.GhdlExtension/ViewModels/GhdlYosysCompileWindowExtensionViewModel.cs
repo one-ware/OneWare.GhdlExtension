@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using OneWare.Essentials.Services;
 using OneWare.OssCadSuiteIntegration.ViewModels;
 using OneWare.OssCadSuiteIntegration.Views;
+using OneWare.OssCadSuiteIntegration.Yosys;
 using OneWare.UniversalFpgaProjectSystem.Models;
 using OneWare.UniversalFpgaProjectSystem.Services;
 using OneWare.UniversalFpgaProjectSystem.ViewModels;
@@ -37,7 +38,7 @@ public class GhdlYosysCompileWindowExtensionViewModel : ObservableObject
                 disposable?.Dispose();
                 disposable = fpgaProjectRoot.WhenValueChanged(y => y.Toolchain).Subscribe(z =>
                 {
-                    IsVisible = z is GhdlYosysToolchain;
+                    IsVisible = z is YosysToolchain.ToolChainId;
                 });
             }
         });
