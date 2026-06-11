@@ -504,20 +504,6 @@ public class GhdlService
 
             var waveFormFullPath = Path.Combine(root.RootFolderPath, waveFilePath);
 
-            //Open VCD inside IDE and prepare to stream
-            if (waveOutput == "VCD")
-            {
-                if (!File.Exists(waveFormFullPath)) await File.Create(waveFormFullPath).DisposeAsync();
-
-                var doc = await _dockService.OpenFileAsync(waveFormFullPath);
-
-                // ReSharper disable once SuspiciousTypeConversion.Global
-                if (doc is IStreamableDocument vcd)
-                {
-                    vcd.PrepareLiveStream();
-                }
-            }
-
             List<string> ghdlRunArguments = ["-r"];
             ghdlRunArguments.AddRange(ghdlOptions);
             ghdlRunArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
@@ -527,7 +513,7 @@ public class GhdlService
             var run = await ExecuteGhdlAsync(ghdlRunArguments, workingDirectory,
                 "Running GHDL Simulation...", AppState.Loading, true);
 
-            if (run.success && waveOutput is "GHW" or "FST")
+            if (run.success)
             {
                 _ = await _dockService.OpenFileAsync(waveFormFullPath);
             }
