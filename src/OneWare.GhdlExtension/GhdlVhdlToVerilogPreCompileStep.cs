@@ -8,6 +8,7 @@ namespace OneWare.GhdlExtension;
 
 public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger logger) : IFpgaPreCompileStep
 {
+    public string Id => "ghdlVhdlToVerilog";
     public string Name => "GHDL: VHDL to Verilog";
 
     public readonly string BuildDir = "build";
