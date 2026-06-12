@@ -159,7 +159,7 @@
     },
     {
       "version": "1.0.4",
-      "minStudioVersion": "1.0.17",
+      "minStudioVersion": "1.0.19",
       "targets": [
         {
           "target": "all"
