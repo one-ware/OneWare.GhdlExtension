@@ -26,13 +26,6 @@ public class GhdlSimulator : IFpgaSimulator
             if (x is TestBenchContext tb)
             {
                 //Set the default VHDL standard to the project's standard if possible
-                var root = projectExplorerService.GetRootFromFile(tb.FilePath);
-                var globalVhdlVersion = (root as UniversalFpgaProjectRoot)?.Properties.GetString("vhdlStandard");
-
-                var vhdlSetting = tb.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
-                if(vhdlSetting == null && globalVhdlVersion != null) 
-                    tb.SetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard), globalVhdlVersion);
-                
                 return new GhdlSimulatorToolbarView()
                 {
                     DataContext = new GhdlSimulatorToolbarViewModel(tb, this)

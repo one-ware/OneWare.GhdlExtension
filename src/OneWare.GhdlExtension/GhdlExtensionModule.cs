@@ -284,14 +284,14 @@ public class GhdlExtensionModule : OneWareModuleBase
                     },
                     new PackageTarget()
                     {
-                        Target = "osx-arm",
+                        Target = "osx-arm15",
                         Url =
-                            "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-llvm-6.0.0-macos14-aarch64.tar.gz",
+                            "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-llvm-6.0.0-macos15-aarch64.tar.gz",
                         AutoSetting =
                         [
                             new PackageAutoSetting()
                             {
-                                RelativePath = "ghdl-llvm-6.0.0-macos14-aarch64/bin/ghdl",
+                                RelativePath = "ghdl-llvm-6.0.0-macos15-aarch64/bin/ghdl",
                                 SettingKey = GhdlPathSetting
                             }
                         ]
@@ -343,19 +343,6 @@ public class GhdlExtensionModule : OneWareModuleBase
                             Command = new AsyncRelayCommand(() => ghdlService.SimulateFileAsync(file.FullPath)),
                             Icon = new IconModel("Material.Pulse"),
                         },
-
-                        new MenuItemModel("SynthGhdlToVerilog")
-                        {
-                            Header = "Convert to Verilog Netlist",
-                            Command = new AsyncRelayCommand(() =>
-                                ghdlService.SynthAsync(file.FullPath, "verilog", file.TopFolder!.FullPath)),
-                        },
-                        new MenuItemModel("SynthGhdlToDot")
-                        {
-                            Header = "Convert to Dot Netlist",
-                            Command = new AsyncRelayCommand(() =>
-                                ghdlService.SynthAsync(file.FullPath, "dot", file.TopFolder!.FullPath)),
-                        }
                     ]
                 });
             }
@@ -363,6 +350,7 @@ public class GhdlExtensionModule : OneWareModuleBase
 
         serviceProvider.Resolve<IProjectSettingsService>().AddProjectSetting(new ProjectSettingBuilder()
             .WithKey("GHDL_Libraries")
+            .WithCategory("GHDL")
             .WithActivation(file =>
             {
                 if (file is UniversalFpgaProjectRoot root)

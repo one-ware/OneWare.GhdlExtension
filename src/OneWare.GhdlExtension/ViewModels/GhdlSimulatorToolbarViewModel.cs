@@ -21,30 +21,6 @@ public class GhdlSimulatorToolbarViewModel(TestBenchContext context, IFpgaSimula
         }
     }
     
-    public string[] AvailableVhdlStandards => ["87", "93", "93c", "00", "02", "08", "19"];
-    public string VhdlStandard
-    {
-        get
-        {
-            if (ContainerLocator.Container.Resolve<IProjectExplorerService>().GetRootFromFile(context.FilePath) is UniversalFpgaProjectRoot root)
-            {
-                return root.Properties.GetString("vhdlStandard") ?? context.GetBenchProperty(nameof(VhdlStandard)) ?? "93c";
-            }
-            
-            return context.GetBenchProperty(nameof(VhdlStandard)) ?? "93c";
-        }
-        set
-        {
-            if (ContainerLocator.Container.Resolve<IProjectExplorerService>().GetRootFromFile(context.FilePath) is UniversalFpgaProjectRoot root)
-            {
-                root.Properties.SetString("vhdlStandard", value);
-            }
-            
-            context.SetBenchProperty(nameof(VhdlStandard), value);
-            OnPropertyChanged();
-        }
-    }
-    
     public string[] AvailableWaveOutputFormats => ["VCD", "GHW", "FST"];
     public string WaveOutputFormat
     {

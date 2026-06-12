@@ -28,9 +28,6 @@ public class GhdlService
 
     public AsyncRelayCommand SimulateCommand { get; }
 
-    public AsyncRelayCommand SynthToDotCommand { get; }
-
-    public AsyncRelayCommand SynthToVerilogCommand { get; }
 
     private string _path = string.Empty;
 
@@ -56,12 +53,6 @@ public class GhdlService
         });
 
         SimulateCommand = new AsyncRelayCommand(SimulateCurrentFileAsync,
-            () => Path.GetExtension(_dockService.CurrentDocument?.FullPath) is ".vhd" or ".vhdl");
-
-        SynthToDotCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("dot"),
-            () => Path.GetExtension(_dockService.CurrentDocument?.FullPath) is ".vhd" or ".vhdl");
-
-        SynthToVerilogCommand = new AsyncRelayCommand(() => SynthCurrentFileAsync("verilog"),
             () => Path.GetExtension(_dockService.CurrentDocument?.FullPath) is ".vhd" or ".vhdl");
 
         _dockService.WhenValueChanged(x => x.CurrentDocument).Subscribe(_ =>
@@ -153,14 +144,14 @@ public class GhdlService
 
     private Task SynthCurrentFileAsync(string output)
     {
-        if (_dockService.CurrentDocument?.FullPath is { } fullPath)
-            return SynthAsync(fullPath, output, Path.GetDirectoryName(fullPath)!);
+        if (_dockService.CurrentDocument?.FullPath is { } fullPath &&
+            _projectExplorerService.GetRootFromFile(fullPath) is UniversalFpgaProjectRoot root)
+            return SynthAsync(root, output, Path.GetDirectoryName(fullPath)!);
         return Task.CompletedTask;
     }
 
-    private async Task<bool> ElaborateAsync(string fullPath, TestBenchContext context)
+    private async Task<bool> ElaborateAsync(UniversalFpgaProjectRoot root, TestBenchContext? context = null, string? topFallback = null)
     {
-        if (_projectExplorerService.GetRootFromFile(fullPath) is not UniversalFpgaProjectRoot root) return false;
 
         var libfiles = GetAllLibraryFiles(root);
 
@@ -170,7 +161,12 @@ public class GhdlService
             .Where(x => !root.IsCompileExcluded(x))
             .Where(x => !libfiles.Contains(x));
 
-        var top = Path.GetFileNameWithoutExtension(fullPath);
+        var top = root.TopEntity ?? topFallback;
+        if (top == null)
+        {
+            _logger.Error("No top entity set for elaboration");
+            return false;
+        }
         var workingDirectory = root.FullPath;
         var buildDirectory = Path.Combine(workingDirectory, "build");
 
@@ -194,15 +190,15 @@ public class GhdlService
         ghdlOptions.Add($"--workdir={buildDirectory}");
         ghdlOptions.Add($"-P{buildDirectory}");
 
-        var vhdlStandard = context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard)) ??
-                           root.Properties.GetString("vhdlStandard");
+        var vhdlStandard = root.Properties.GetString("vhdlStandard");
+
         if (vhdlStandard != null)
         {
             ghdlOptions.Add($"--std={vhdlStandard}");
         }
 
         var additionalGhdlOptions =
-            context.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
+            context?.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlOptions));
         if (additionalGhdlOptions != null) ghdlOptions.AddRange(additionalGhdlOptions.Split(' '));
 
         List<string> ghdlInitArguments = ["-i"];
@@ -299,7 +295,7 @@ public class GhdlService
             return false;
         }
 
-        string top = Path.GetFileNameWithoutExtension(root.TopEntity);
+        string top = root.TopEntity;
 
         List<string> ghdlMakeArguments = ["-m"];
         ghdlMakeArguments.AddRange(ghdlOptions);
@@ -369,7 +365,7 @@ public class GhdlService
                 continue;
             }
 
-            if (libfiles.Contains(top))
+            if (libfiles.Any(f => string.Equals(Path.GetFileNameWithoutExtension(f), top, StringComparison.OrdinalIgnoreCase)))
             {
                 return $"{libname}.";
             }
@@ -378,68 +374,68 @@ public class GhdlService
         return "";
     }
 
-    public async Task<bool> SynthAsync(string fullPath, string outputType, string outputDirectory)
+    public async Task<bool> SynthAsync(UniversalFpgaProjectRoot root, string outputType, string outputDirectory)
     {
-        if (_projectExplorerService.GetRootFromFile(fullPath) is UniversalFpgaProjectRoot root)
+        IPackageState? ghdlPackagemodel = _packageService.Packages.GetValueOrDefault("ghdl");
+        Version ghdlVersion = new Version(5, 0, 1);
+        bool directVerilogOutput = (ghdlPackagemodel is not null &&
+                                    ghdlVersion.CompareTo(
+                                        Version.Parse(ghdlPackagemodel.InstalledVersion!.Version!)) <= 0 &&
+                                    outputType.Equals("verilog"));
+
+        _dockService.Show<IOutputService>();
+        
+        var top = root.TopEntity;
+        if (top == null)
         {
-            IPackageState? ghdlPackagemodel = _packageService.Packages.GetValueOrDefault("ghdl");
-            Version ghdlVersion = new Version(5, 0, 1);
-            bool directVerilogOutput = (ghdlPackagemodel is not null &&
-                                        ghdlVersion.CompareTo(
-                                            Version.Parse(ghdlPackagemodel.InstalledVersion!.Version!)) <= 0 &&
-                                        outputType.Equals("verilog"));
-
-            _dockService.Show<IOutputService>();
-
-            var settings = await TestBenchContextManager.LoadContextAsync(fullPath);
-
-            var top = Path.GetFileNameWithoutExtension(fullPath);
-            var workingDirectory = root.FullPath;
-            string buildDirectory = Path.Combine(workingDirectory, "build");
-
-            var vhdlStandard = root.Properties.GetString("vhdlStandard") ?? "93c";
-            List<string> ghdlOptions = [$"--std={vhdlStandard}"];
-            ghdlOptions.Add($"--workdir={buildDirectory}");
-            ghdlOptions.Add($"-P{buildDirectory}");
-
-            var elaborateResult = await ElaborateAsync(fullPath, settings);
-            if (!elaborateResult) return false;
-
-            List<string> ghdlSynthArguments = ["--synth"];
-            ghdlSynthArguments.AddRange(ghdlOptions);
-            ghdlSynthArguments.Add($"--out={outputType}");
-
-            var extension = outputType switch
-            {
-                "dot" => ".dot",
-                "verilog" => ".v",
-                _ => ".file"
-            };
-
-            if (directVerilogOutput)
-            {
-                ghdlSynthArguments.Add(
-                    $"-o={Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(fullPath))}{extension}");
-            }
-
-            ghdlSynthArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
-
-            var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
-                "Running GHDL Synth...", AppState.Loading, true);
-            if (!synth.success) return false;
-
-            if (!directVerilogOutput)
-            {
-                await File.WriteAllTextAsync(
-                    Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(fullPath) + extension),
-                    synth.stdout);
-            }
-
-            return true;
+            _logger.Error("No top entity set for synthesis");
+            return false;
         }
 
-        return false;
+        var workingDirectory = root.FullPath;
+        string buildDirectory = Path.Combine(workingDirectory, "build");
+
+        var vhdlStandard = root.Properties.GetString("vhdlStandard") ?? "93c";
+        List<string> ghdlOptions = [$"--std={vhdlStandard}"];
+        ghdlOptions.Add($"--workdir={buildDirectory}");
+        ghdlOptions.Add($"-P{buildDirectory}");
+
+        var elaborateResult = await ElaborateAsync(root);
+        if (!elaborateResult) return false;
+
+        List<string> ghdlSynthArguments = ["--synth"];
+        ghdlSynthArguments.AddRange(ghdlOptions);
+        ghdlSynthArguments.Add($"--out={outputType}");
+
+        var extension = outputType switch
+        {
+            "dot" => ".dot",
+            "verilog" => ".v",
+            _ => ".file"
+        };
+
+        if (directVerilogOutput)
+        {
+            ghdlSynthArguments.Add(
+                $"-o={Path.Combine(outputDirectory, top)}{extension}");
+        }
+
+        ghdlSynthArguments.Add($"{GetLibraryPrefixForToplevel(root)}{top}");
+
+        var synth = await ExecuteGhdlAsync(ghdlSynthArguments, workingDirectory,
+            "Running GHDL Synth...", AppState.Loading, true);
+        if (!synth.success) return false;
+
+        if (!directVerilogOutput)
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(outputDirectory, top + extension),
+                synth.stdout);
+        }
+
+        return true;
     }
+
 
     private Task SimulateCurrentFileAsync()
     {
@@ -489,8 +485,7 @@ public class GhdlService
                 settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AdditionalGhdlSimOptions));
             if (additionalGhdlSimOptions != null) simulatingOptions.AddRange(additionalGhdlSimOptions.Split(' '));
 
-            var vhdlStandard = root.Properties.GetString("vhdlStandard") ??
-                               settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.VhdlStandard));
+            var vhdlStandard = root.Properties.GetString("vhdlStandard");
             if (vhdlStandard != null) ghdlOptions.Add($"--std={vhdlStandard}");
 
             var assertLevel = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.AssertLevel));
@@ -499,7 +494,7 @@ public class GhdlService
             var stopTime = settings.GetBenchProperty(nameof(GhdlSimulatorToolbarViewModel.SimulationStopTime));
             if (stopTime != null) simulatingOptions.Add($"--stop-time={stopTime}");
 
-            var elaborateResult = await ElaborateAsync(fullPath, settings);
+            var elaborateResult = await ElaborateAsync(root, settings, top);
             if (!elaborateResult) return false;
 
             var waveFormFullPath = Path.Combine(root.RootFolderPath, waveFilePath);
