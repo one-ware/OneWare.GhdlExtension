@@ -10,8 +10,8 @@ public class GhdlVhdlToVerilogPreCompileStep(GhdlService ghdlService, ILogger lo
 {
     public string Name => "GHDL: VHDL to Verilog";
 
-    public readonly string BuildDir = "preCompile";
-    public readonly string GhdlOutputDir = "ghdl_verilog";
+    public readonly string BuildDir = "build";
+    public readonly string GhdlOutputDir = "gen_verilog";
 
     public async Task<bool> PerformPreCompileStepAsync(UniversalFpgaProjectRoot project, FpgaModel fpga)
     {
