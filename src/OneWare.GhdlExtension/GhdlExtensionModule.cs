@@ -459,18 +459,6 @@ public class GhdlExtensionModule : OneWareModuleBase
         serviceProvider.Resolve<FpgaService>().RegisterPreCompileStep<GhdlVhdlToVerilogPreCompileStep>();
 
         _projectExplorerService = serviceProvider.Resolve<IProjectExplorerService>();
-        
-        serviceProvider.Resolve<IWindowService>().RegisterUiExtension("CompileWindow_TopRightExtension",
-            new OneWareUiExtension(x =>
-            {
-                if (x is not UniversalFpgaProjectPinPlannerViewModel cm) return null;
-                return new GhdlYosysCompileWindowExtensionView
-                {
-                    DataContext =
-                        serviceProvider.Resolve<GhdlYosysCompileWindowExtensionViewModel>((
-                            typeof(UniversalFpgaProjectPinPlannerViewModel), cm))
-                };
-            }));
     }
 
     private async Task AddFolderToLibraryAsync(string library, IProjectFolder folder)

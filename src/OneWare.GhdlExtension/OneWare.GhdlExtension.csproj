@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <Version>1.0.3</Version>
+        <Version>1.0.4</Version>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -12,8 +12,7 @@
     
     <ItemGroup>
         <PackageReference Include="OneWare.Essentials" Version="1.0.17" Private="false" ExcludeAssets="runtime;Native" />
-        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="1.0.10" Private="false" ExcludeAssets="runtime;Native" />
-        <PackageReference Include="OneWare.OssCadSuiteIntegration" Version="1.0.10" Private="true" ExcludeAssets="runtime;Native" />
+        <PackageReference Include="OneWare.UniversalFpgaProjectSystem" Version="1.0.17" Private="false" ExcludeAssets="runtime;Native" />
     </ItemGroup>
 
     <Target Name="GenerateCompatibilityFile" AfterTargets="Build">
