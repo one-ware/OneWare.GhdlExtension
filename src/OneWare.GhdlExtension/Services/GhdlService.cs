@@ -150,7 +150,7 @@ public class GhdlService
         return Task.CompletedTask;
     }
 
-    private async Task<bool> ElaborateAsync(UniversalFpgaProjectRoot root, TestBenchContext? context = null, string? topFallback = null)
+    private async Task<bool> ElaborateAsync(UniversalFpgaProjectRoot root, TestBenchContext? context = null, string? topOverride = null)
     {
 
         var libfiles = GetAllLibraryFiles(root);
@@ -161,7 +161,7 @@ public class GhdlService
             .Where(x => !root.IsCompileExcluded(x))
             .Where(x => !libfiles.Contains(x));
 
-        var top = root.TopEntity ?? topFallback;
+        var top = topOverride ?? root.TopEntity;
         if (top == null)
         {
             _logger.Error("No top entity set for elaboration");
