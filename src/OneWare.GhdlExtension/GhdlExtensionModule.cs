@@ -423,7 +423,7 @@ public class GhdlExtensionModule : OneWareModuleBase
             }
         }));
         
-        toolService.Register(new ToolContext("ghdl", "Synth Tool", "ghdl"), new NativeStrategy());
+        toolService.Register(new ToolContext("ghdl", "Synth Tool", "ghdl"));
 
         serviceProvider.Resolve<IProjectExplorerService>().RegisterConstructContextMenu(((list, models) =>
         {
