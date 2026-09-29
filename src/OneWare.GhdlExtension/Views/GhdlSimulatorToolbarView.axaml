@@ -1,59 +1,52 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:OneWare.GhdlExtension.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="30"
              x:Class="OneWare.GhdlExtension.Views.GhdlSimulatorToolbarView"
              x:DataType="viewModels:GhdlSimulatorToolbarViewModel">
-    <DockPanel>
-        <Button Classes="BorderButton" CornerRadius="3" DockPanel.Dock="Right">
+    <WrapPanel Classes="editor-bar-items">
+        <StackPanel Classes="form-row">
+            <TextBlock Text="Stop Time" ToolTip.Tip="Sets the time when the simulation is forced to stop" />
+            <TextBox Width="90" Watermark="10ms" Text="{Binding SimulationStopTime}" />
+        </StackPanel>
+        <StackPanel Classes="form-row">
+            <TextBlock Text="Format"
+                       ToolTip.Tip="Select the output format to use. VCD can be opened inside the IDE, while GHW and FST require GTKWave." />
+            <ComboBox Width="80" ItemsSource="{Binding AvailableWaveOutputFormats}"
+                      SelectedItem="{Binding WaveOutputFormat, Mode=TwoWay}" />
+        </StackPanel>
+        <StackPanel Classes="form-row">
+            <TextBlock Text="Assert Level"
+                       ToolTip.Tip="Select the assertion level at which an assertion violation stops the simulation" />
+            <ComboBox Width="90" ItemsSource="{Binding AvailableAssertLevels}"
+                      SelectedItem="{Binding AssertLevel, Mode=TwoWay}" />
+        </StackPanel>
+        <Button Classes="icon" ToolTip.Tip="More GHDL options">
             <Button.Flyout>
-                <Flyout>
-                    <StackPanel Spacing="3">
-                        <StackPanel Orientation="Vertical" Spacing="2">
-                            <TextBlock Text="Additional GHDL Options"/>
+                <Flyout Placement="BottomEdgeAlignedLeft">
+                    <StackPanel Classes="form" Width="300">
+                        <StackPanel Classes="section">
+                            <TextBlock Text="Additional GHDL Options" />
                             <TextBox Text="{Binding AdditionalGhdlOptions}" />
                         </StackPanel>
-                        <StackPanel Orientation="Vertical" Spacing="2">
-                            <TextBlock Text="Additional GHDL Simulation Options"/>
+                        <StackPanel Classes="section">
+                            <TextBlock Text="Additional GHDL Simulation Options" />
                             <TextBox Text="{Binding AdditionalGhdlSimOptions}" />
                         </StackPanel>
-						<StackPanel Orientation="Vertical" Spacing="2">
-							<TextBlock Text="GTKWave Save File"/>
-							<TextBox Text="{Binding GtkwSaveFile}" />
-						</StackPanel>
-						<StackPanel Orientation="Vertical" Spacing="2">
-							<TextBlock Text="Additional GTKWave Arguments"/>
-							<TextBox Text="{Binding GtkwWaveArgs}" />
-						</StackPanel>
+                        <StackPanel Classes="section">
+                            <TextBlock Text="GTKWave Save File" />
+                            <TextBox Text="{Binding GtkwSaveFile}" />
+                        </StackPanel>
+                        <StackPanel Classes="section">
+                            <TextBlock Text="Additional GTKWave Arguments" />
+                            <TextBox Text="{Binding GtkwWaveArgs}" />
+                        </StackPanel>
                     </StackPanel>
                 </Flyout>
             </Button.Flyout>
-            <Image Source="{DynamicResource BoxIcons.RegularMenu}" Width="14" />
+            <PathIcon Data="{DynamicResource Icon.Settings}" />
         </Button>
-        
-        <StackPanel DockPanel.Dock="Left" Classes="ToolBar" ClipToBounds="True">
-            <TextBlock VerticalAlignment="Center" Text="VHDL Standard"
-                       ToolTip.Tip="Select the VHDL standard expected by GHDL" />
-            <Border Classes="SplitterBorder" />
-            <TextBlock VerticalAlignment="Center" Text="Stop Time"
-                       ToolTip.Tip="Sets the time when the simulation is forced to stop" />
-            <TextBox Watermark="10ms" Classes="ToolBar" Width="100" Text="{Binding SimulationStopTime}" />
-            <Border Classes="SplitterBorder" />
-            <TextBlock VerticalAlignment="Center" Text="Format"
-                       ToolTip.Tip="Select the output format to use. VCD can be opened inside the IDE, while GHW and FST require GTKWave." />
-            <Border Classes="RoundToolBar">
-                <ComboBox Width="100" ItemsSource="{Binding AvailableWaveOutputFormats}" SelectedIndex="0"
-                          SelectedItem="{Binding WaveOutputFormat, Mode=TwoWay}" />
-            </Border>
-            <Border Classes="SplitterBorder" />
-            <TextBlock VerticalAlignment="Center" Text="Assert Level"
-                       ToolTip.Tip="Select the assertion level at which an assertion violation stops the simulation" />
-            <Border Classes="RoundToolBar">
-                <ComboBox Width="100" ItemsSource="{Binding AvailableAssertLevels}" SelectedIndex="0"
-                          SelectedItem="{Binding AssertLevel, Mode=TwoWay}" />
-            </Border>
-        </StackPanel>
-    </DockPanel>
+    </WrapPanel>
 </UserControl>
