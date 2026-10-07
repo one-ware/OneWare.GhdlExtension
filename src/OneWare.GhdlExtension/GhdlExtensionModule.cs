@@ -236,7 +236,7 @@ public class GhdlExtensionModule : OneWareModuleBase
                     },
                     new PackageTarget()
                     {
-                        Target = "osx-arm",
+                        Target = "osx-arm64",
                         Url =
                             "https://github.com/ghdl/ghdl/releases/download/v5.1.1/ghdl-llvm-5.1.1-macos14-aarch64.tar.gz",
                         AutoSetting =
