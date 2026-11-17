@@ -270,6 +270,20 @@ public class GhdlExtensionModule : OneWareModuleBase
                     },
                     new PackageTarget()
                     {
+                        // GHDL has no native Windows ARM build; the x64 build runs through emulation
+                        Target = "win-arm64",
+                        Url = "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-mcode-6.0.0-ucrt64.zip",
+                        AutoSetting =
+                        [
+                            new PackageAutoSetting()
+                            {
+                                RelativePath = "bin/ghdl.exe",
+                                SettingKey = GhdlPathSetting
+                            }
+                        ]
+                    },
+                    new PackageTarget()
+                    {
                         Target = "linux-x64",
                         Url =
                             "https://github.com/ghdl/ghdl/releases/download/v6.0.0/ghdl-mcode-6.0.0-ubuntu24.04-x86_64.tar.gz",
